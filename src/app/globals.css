@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #080C1A;
+  color: #ffffff;
+  font-family: Calibri, "Segoe UI", system-ui, sans-serif;
+}
