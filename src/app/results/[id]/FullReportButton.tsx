@@ -2,28 +2,38 @@
 
 import { useState } from "react";
 
-export default function FullReportButton({ assessmentId }: { assessmentId: string }) {
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+export default function FullReportButton({
+  assessmentId,
+  alreadyPaid,
+}: {
+  assessmentId: string;
+  alreadyPaid?: boolean;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   async function handleClick() {
-    setStatus("sending");
+    setLoading(true);
+    setError(false);
     try {
-      const res = await fetch("/api/full-report-request", {
+      const res = await fetch("/api/checkout/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assessmentId }),
       });
-      if (!res.ok) throw new Error("Request failed");
-      setStatus("sent");
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error();
+      window.location.href = data.url;
     } catch {
-      setStatus("error");
+      setError(true);
+      setLoading(false);
     }
   }
 
-  if (status === "sent") {
+  if (alreadyPaid) {
     return (
       <span className="inline-flex items-center justify-center rounded-lg border border-zy-electric px-5 py-3 text-sm font-medium text-zy-electric">
-        Request received, we will follow up by email
+        Full Report Unlocked
       </span>
     );
   }
@@ -31,10 +41,10 @@ export default function FullReportButton({ assessmentId }: { assessmentId: strin
   return (
     <button
       onClick={handleClick}
-      disabled={status === "sending"}
+      disabled={loading}
       className="inline-flex items-center justify-center rounded-lg border border-zy-electric px-5 py-3 text-sm font-medium text-white hover:bg-zy-electric/10 transition disabled:opacity-60"
     >
-      {status === "sending" ? "Sending..." : status === "error" ? "Try again" : "Get Your Full Report"}
+      {loading ? "Redirecting to checkout..." : error ? "Try again" : "Get Your Full Report — $497"}
     </button>
   );
 }

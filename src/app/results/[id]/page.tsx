@@ -13,7 +13,7 @@ async function getAssessment(id: string) {
 
   const { data: assessment } = await supabase
     .from("assessments")
-    .select("id, total_score, contact_name, contact_business, taken_at, tiers ( name, tier_number, one_line_summary )")
+    .select("id, total_score, contact_name, contact_business, taken_at, full_report_paid_at, tiers ( name, tier_number, one_line_summary )")
     .eq("id", id)
     .single();
 
@@ -27,7 +27,13 @@ async function getAssessment(id: string) {
   return { assessment, pillarScores: (pillarScores ?? []) as unknown as PillarScoreRow[] };
 }
 
-export default async function ResultsPage({ params }: { params: { id: string } }) {
+export default async function ResultsPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { report?: string };
+}) {
   const data = await getAssessment(params.id);
   if (!data || !data.assessment) return notFound();
 
@@ -39,6 +45,8 @@ export default async function ResultsPage({ params }: { params: { id: string } }
   );
 
   const businessName = assessment.contact_business || assessment.contact_name || "Your Business";
+  const alreadyPaid = Boolean(assessment.full_report_paid_at);
+  const justPaid = searchParams.report === "paid";
 
   return (
     <main id="grid-results" className="min-h-screen bg-zy-near-black text-white print:bg-white print:text-black">
@@ -56,6 +64,14 @@ export default async function ResultsPage({ params }: { params: { id: string } }
             <p className="text-sm text-zy-chrome print:text-gray-600">The Momentum of Business</p>
           </div>
         </div>
+
+        {justPaid && (
+          <div className="mb-8 rounded-lg border border-zy-electric bg-zy-electric/10 px-5 py-4 print:hidden">
+            <p className="text-sm text-white">
+              Payment confirmed. Your Full Report is unlocked below.
+            </p>
+          </div>
+        )}
 
         <p className="text-zy-light-blue print:text-gray-700 text-sm font-medium tracking-wide uppercase mb-2">
           Your GRID Diagnostic Result
@@ -123,7 +139,7 @@ export default async function ResultsPage({ params }: { params: { id: string } }
         {/* Actions: hidden when printing */}
         <div className="mt-10 print:hidden flex flex-col sm:flex-row gap-4">
           <PrintButton />
-          <FullReportButton assessmentId={assessment.id} />
+          <FullReportButton assessmentId={assessment.id} alreadyPaid={alreadyPaid} />
         </div>
 
         {/* Footer: contact and copyright */}
