@@ -1,6 +1,7 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import PrintButton from "./PrintButton";
+import FullReportButton from "./FullReportButton";
 
 interface PillarScoreRow {
   section_total: number;
@@ -38,12 +39,6 @@ export default async function ResultsPage({ params }: { params: { id: string } }
   );
 
   const businessName = assessment.contact_business || assessment.contact_name || "Your Business";
-  const contactName = assessment.contact_name || "";
-  const mailSubject = encodeURIComponent(`Full Report Request for ${businessName}`);
-  const mailBody = encodeURIComponent(
-    `Hello Zytrion,\n\nI just completed the GRID Diagnostic and would like my full report.\n\nName: ${contactName}\nBusiness: ${businessName}\nScore: ${assessment.total_score} / 80\nTier: ${tier?.name ?? ""}\n\nThank you.`
-  );
-  const fullReportHref = `mailto:info@getzytrion.com?subject=${mailSubject}&body=${mailBody}`;
 
   return (
     <main id="grid-results" className="min-h-screen bg-zy-near-black text-white print:bg-white print:text-black">
@@ -51,23 +46,11 @@ export default async function ResultsPage({ params }: { params: { id: string } }
 
         {/* Header: logo and wordmark */}
         <div className="flex items-center gap-3 mb-10 print:mb-6">
-          <svg width="40" height="40" viewBox="0 0 100 100" className="print:hidden" aria-hidden="true">
-            <defs>
-              <radialGradient id="zyOrb" cx="35%" cy="30%" r="75%">
-                <stop offset="0%" stopColor="#4AB3E8" />
-                <stop offset="45%" stopColor="#1565FF" />
-                <stop offset="100%" stopColor="#0B3DBF" />
-              </radialGradient>
-            </defs>
-            <circle cx="50" cy="50" r="34" fill="url(#zyOrb)" />
-            <ellipse cx="50" cy="50" rx="44" ry="16" fill="none" stroke="#C7CDD6" strokeWidth="2.5" transform="rotate(30 50 50)" opacity="0.85" />
-            <ellipse cx="50" cy="50" rx="44" ry="16" fill="none" stroke="#C7CDD6" strokeWidth="2.5" transform="rotate(-30 50 50)" opacity="0.85" />
-          </svg>
-          <svg width="40" height="40" viewBox="0 0 100 100" className="hidden print:block" aria-hidden="true">
-            <circle cx="50" cy="50" r="34" fill="none" stroke="#0A0F2E" strokeWidth="3" />
-            <ellipse cx="50" cy="50" rx="44" ry="16" fill="none" stroke="#0A0F2E" strokeWidth="2" transform="rotate(30 50 50)" />
-            <ellipse cx="50" cy="50" rx="44" ry="16" fill="none" stroke="#0A0F2E" strokeWidth="2" transform="rotate(-30 50 50)" />
-          </svg>
+          <img
+            src="/zytrion-orb-logo.png"
+            alt="Zytrion Infrastructure Group"
+            className="w-10 h-10 print:w-8 print:h-8"
+          />
           <div>
             <p className="text-sm font-semibold tracking-wide">Zytrion Infrastructure Group</p>
             <p className="text-xs text-zy-chrome print:text-gray-600">The Momentum of Business</p>
@@ -140,12 +123,7 @@ export default async function ResultsPage({ params }: { params: { id: string } }
         {/* Actions: hidden when printing */}
         <div className="mt-10 print:hidden flex flex-col sm:flex-row gap-4">
           <PrintButton />
-          <a
-            href={fullReportHref}
-            className="inline-flex items-center justify-center rounded-lg border border-zy-electric px-5 py-3 text-sm font-medium text-white hover:bg-zy-electric/10 transition"
-          >
-            Get Your Full Report
-          </a>
+          <FullReportButton assessmentId={assessment.id} />
         </div>
 
         {/* Footer: contact and copyright */}
