@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation";
 import PrintButton from "./PrintButton";
 import FullReportButton from "./FullReportButton";
+import { PILLAR_DESCRIPTIONS } from "@/lib/assessment/pillarDescriptions";
 import Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +76,8 @@ export default async function ResultsPage({
     (min, p) => (p.section_total < min.section_total ? p : min),
     pillarScores[0]
   );
+  const lowestName = lowest.pillars?.pillar_name ?? "";
+  const lowestDescription = PILLAR_DESCRIPTIONS[lowestName] ?? "";
 
   const businessName = assessment.contact_business || assessment.contact_name || "Your Business";
   const initiallyPaid = Boolean(assessment.full_report_paid_at);
@@ -162,11 +165,16 @@ export default async function ResultsPage({
         <div className="mt-14 print:mt-8 border border-white/10 print:border-gray-300 rounded-lg p-6 bg-white/[0.02] print:bg-white">
           <p className="text-zy-chrome print:text-gray-800 leading-relaxed">
             Your lowest pillar,{" "}
-            <span className="text-white print:text-black font-medium">{lowest.pillars?.pillar_name}</span>,
+            <span className="text-white print:text-black font-medium">{lowestName}</span>,
             is the structural bottleneck to close first. That is the
             single next step, before anything else, since every other
             pillar depends on it holding.
           </p>
+          {lowestDescription && (
+            <p className="mt-4 text-zy-chrome print:text-gray-700 leading-relaxed text-sm border-t border-white/10 print:border-gray-300 pt-4">
+              {lowestDescription}
+            </p>
+          )}
         </div>
 
         {/* Actions: hidden when printing */}
