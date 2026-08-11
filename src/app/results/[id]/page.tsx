@@ -79,6 +79,10 @@ export default async function ResultsPage({
   const lowestName = lowest.pillars?.pillar_name ?? "";
   const lowestDescription = PILLAR_DESCRIPTIONS[lowestName] ?? "";
 
+  // Certification Rubric standard: no pillar below 10/16 qualifies for Tier 1,
+  // even when the total score alone would land in the 65-80 range.
+  const hasCriticalPillarGap = tier?.tier_number === 1 && lowest.section_total < 10;
+
   const businessName = assessment.contact_business || assessment.contact_name || "Your Business";
   const initiallyPaid = Boolean(assessment.full_report_paid_at);
   const alreadyPaid = await verifyPaymentIfNeeded(assessment.id, searchParams.session_id, initiallyPaid);
@@ -128,6 +132,18 @@ export default async function ResultsPage({
           <p className="mt-2 text-zy-chrome print:text-gray-700 text-center max-w-md">
             {tier?.one_line_summary}
           </p>
+
+          {hasCriticalPillarGap && (
+            <div className="mt-6 max-w-md rounded-lg border border-amber-400/40 bg-amber-400/5 px-5 py-4 print:border-gray-400 print:bg-white">
+              <p className="text-sm text-amber-200 print:text-gray-800 leading-relaxed">
+                Your total score places you in {tier?.name}, but {lowestName}{" "}
+                scored low enough on its own to still create real risk with a
+                lender, investor, or auditor. A strong total score does not
+                offset one critically weak pillar. Resolve {lowestName} before
+                treating this position as fully institution-ready.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Pillar breakdown */}
