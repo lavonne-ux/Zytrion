@@ -1,4 +1,4 @@
-﻿import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import PrintButton from "./PrintButton";
 
@@ -140,7 +140,7 @@ export default async function ResultsPage({ params }: { params: { id: string } }
         {/* Actions: hidden when printing */}
         <div className="mt-10 print:hidden flex flex-col sm:flex-row gap-4">
           <PrintButton />
-          
+          <a
             href={fullReportHref}
             className="inline-flex items-center justify-center rounded-lg border border-zy-electric px-5 py-3 text-sm font-medium text-white hover:bg-zy-electric/10 transition"
           >
