@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation";
 import PrintButton from "./PrintButton";
 import FullReportButton from "./FullReportButton";
+import Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
 
@@ -29,12 +30,41 @@ async function getAssessment(id: string) {
   return { assessment, pillarScores: (pillarScores ?? []) as unknown as PillarScoreRow[] };
 }
 
+async function verifyPaymentIfNeeded(
+  assessmentId: string,
+  sessionId: string | undefined,
+  alreadyPaid: boolean
+): Promise<boolean> {
+  if (alreadyPaid || !sessionId) return alreadyPaid;
+
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status === "paid" && session.metadata?.assessmentId === assessmentId) {
+      const supabase = createAdminClient();
+      await supabase
+        .from("assessments")
+        .update({
+          full_report_paid_at: new Date().toISOString(),
+          stripe_checkout_session_id: session.id,
+        })
+        .eq("id", assessmentId);
+      return true;
+    }
+  } catch {
+    // Falls through to false; the webhook remains the source of truth if this check fails.
+  }
+
+  return alreadyPaid;
+}
+
 export default async function ResultsPage({
   params,
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { report?: string };
+  searchParams: { report?: string; session_id?: string };
 }) {
   const data = await getAssessment(params.id);
   if (!data || !data.assessment) return notFound();
@@ -47,7 +77,8 @@ export default async function ResultsPage({
   );
 
   const businessName = assessment.contact_business || assessment.contact_name || "Your Business";
-  const alreadyPaid = Boolean(assessment.full_report_paid_at);
+  const initiallyPaid = Boolean(assessment.full_report_paid_at);
+  const alreadyPaid = await verifyPaymentIfNeeded(assessment.id, searchParams.session_id, initiallyPaid);
   const justPaid = searchParams.report === "paid";
 
   return (

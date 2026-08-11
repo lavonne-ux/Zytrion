@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
     customer_email: assessment.contact_email || undefined,
     metadata: { assessmentId: assessment.id },
-    success_url: `${origin}/results/${assessment.id}?report=paid`,
+    success_url: `${origin}/results/${assessment.id}?report=paid&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/results/${assessment.id}?report=cancelled`,
   });
 

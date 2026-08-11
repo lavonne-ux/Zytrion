@@ -10,6 +10,7 @@ export default function FullReportButton({
   alreadyPaid?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
+  const [unlockedLocally, setUnlockedLocally] = useState(false);
   const [error, setError] = useState(false);
 
   async function handleClick() {
@@ -22,7 +23,17 @@ export default function FullReportButton({
         body: JSON.stringify({ assessmentId }),
       });
       const data = await res.json();
-      if (!res.ok || !data.url) throw new Error();
+
+      if (!res.ok) {
+        if (data.error === "Already paid") {
+          setUnlockedLocally(true);
+          setLoading(false);
+          return;
+        }
+        throw new Error();
+      }
+
+      if (!data.url) throw new Error();
       window.location.href = data.url;
     } catch {
       setError(true);
@@ -30,7 +41,7 @@ export default function FullReportButton({
     }
   }
 
-  if (alreadyPaid) {
+  if (alreadyPaid || unlockedLocally) {
     return (
       <span className="inline-flex items-center justify-center rounded-lg border border-zy-electric px-5 py-3 text-sm font-medium text-zy-electric">
         Full Report Unlocked
