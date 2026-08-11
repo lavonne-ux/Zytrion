@@ -62,11 +62,11 @@ export async function POST(req: NextRequest) {
   const assessmentId = assessment.id;
 
   const responseRows = Object.entries(body.answers).map(([statementId, value]) => {
-    const section = statementId.split(".")[0];
+    const section = Number(statementId.split(".")[0]);
     return {
       assessment_id: assessmentId,
       statement_id: statementId,
-      section: `Section ${section}`,
+      section,
       value,
     };
   });
