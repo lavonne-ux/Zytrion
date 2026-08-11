@@ -1,0 +1,97 @@
+﻿import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { scoreAssessment, Answers } from "@/lib/assessment/scoring";
+import { INSTRUMENT_VERSION } from "@/lib/assessment/statements";
+
+interface SubmitBody {
+  contactName: string;
+  contactBusiness: string;
+  contactEmail: string;
+  contactPhone?: string;
+  answers: Answers;
+  referredByPartnerId?: string | null;
+}
+
+export async function POST(req: NextRequest) {
+  let body: SubmitBody;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+  }
+
+  if (!body.contactName || !body.contactEmail || !body.answers) {
+    return NextResponse.json(
+      { error: "Name, email, and answers are required." },
+      { status: 400 }
+    );
+  }
+
+  let result;
+  try {
+    result = scoreAssessment(body.answers);
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: assessment, error: assessmentError } = await supabase
+    .from("assessments")
+    .insert({
+      client_id: null,
+      total_score: result.totalScore,
+      tier_id: result.tierId,
+      instrument_version: INSTRUMENT_VERSION,
+      referred_by_partner_id: body.referredByPartnerId ?? null,
+      contact_name: body.contactName,
+      contact_business: body.contactBusiness ?? null,
+      contact_email: body.contactEmail,
+      contact_phone: body.contactPhone ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (assessmentError || !assessment) {
+    return NextResponse.json(
+      { error: "Could not save assessment.", detail: assessmentError?.message },
+      { status: 500 }
+    );
+  }
+
+  const assessmentId = assessment.id;
+
+  const responseRows = Object.entries(body.answers).map(([statementId, value]) => {
+    const section = statementId.split(".")[0];
+    return {
+      assessment_id: assessmentId,
+      statement_id: statementId,
+      section: `Section ${section}`,
+      value,
+    };
+  });
+
+  const { error: responsesError } = await supabase.from("responses").insert(responseRows);
+  if (responsesError) {
+    return NextResponse.json(
+      { error: "Assessment saved but responses failed to save.", detail: responsesError.message },
+      { status: 500 }
+    );
+  }
+
+  const pillarScoreRows = result.pillarResults.map((p) => ({
+    assessment_id: assessmentId,
+    pillar_id: p.pillarId,
+    section_total: p.score,
+  }));
+
+  const { error: pillarError } = await supabase.from("pillar_scores").insert(pillarScoreRows);
+  if (pillarError) {
+    return NextResponse.json(
+      { error: "Assessment saved but pillar scores failed to save.", detail: pillarError.message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ assessmentId });
+}
