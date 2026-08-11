@@ -4,8 +4,19 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zy-near-black text-white">
       {/* Hero */}
-      <section className="max-w-3xl mx-auto px-6 pt-24 pb-20 text-center">
-        <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-zy-electric to-zy-royal mb-10 shadow-lg shadow-zy-electric/30" />
+      <section className="max-w-3xl mx-auto px-6 pt-20 pb-20 text-center">
+        <div className="flex flex-col items-center gap-3 mb-12">
+          <img
+            src="/zytrion-orb-logo.png"
+            alt="Zytrion Infrastructure Group"
+            className="w-16 h-16"
+          />
+          <div className="text-center">
+            <p className="text-lg font-semibold tracking-wide">Zytrion Infrastructure Group</p>
+            <p className="text-sm text-zy-chrome">The Momentum of Business</p>
+          </div>
+        </div>
+
         <h1 className="text-3xl md:text-4xl font-semibold leading-tight text-white">
           If the bank asked you to prove who is allowed to spend your
           company&apos;s money, could you answer in five seconds?

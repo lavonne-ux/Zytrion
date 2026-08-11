@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SECTIONS, statementsForSection, Section } from "@/lib/assessment/statements";
 import { AnswerValue, Answers } from "@/lib/assessment/scoring";
@@ -23,6 +23,10 @@ export default function TakeAssessment() {
   const [contactPhone, setContactPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
 
   const isContactStep = step === SECTIONS.length;
   const currentSection: Section | null = isContactStep ? null : SECTIONS[step];

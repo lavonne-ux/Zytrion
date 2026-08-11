@@ -45,15 +45,15 @@ export default async function ResultsPage({ params }: { params: { id: string } }
       <div className="max-w-2xl mx-auto px-6 py-16 print:px-0 print:py-8">
 
         {/* Header: logo and wordmark */}
-        <div className="flex items-center gap-3 mb-10 print:mb-6">
+        <div className="flex items-center gap-4 mb-12 print:mb-6">
           <img
             src="/zytrion-orb-logo.png"
             alt="Zytrion Infrastructure Group"
-            className="w-10 h-10 print:w-8 print:h-8"
+            className="w-14 h-14 print:w-10 print:h-10"
           />
           <div>
-            <p className="text-sm font-semibold tracking-wide">Zytrion Infrastructure Group</p>
-            <p className="text-xs text-zy-chrome print:text-gray-600">The Momentum of Business</p>
+            <p className="text-lg font-semibold tracking-wide leading-tight">Zytrion Infrastructure Group</p>
+            <p className="text-sm text-zy-chrome print:text-gray-600">The Momentum of Business</p>
           </div>
         </div>
 
@@ -66,13 +66,13 @@ export default async function ResultsPage({ params }: { params: { id: string } }
 
         {/* Score circle */}
         <div className="mt-10 flex flex-col items-center">
-          <div className="relative w-40 h-40 rounded-full border-4 border-zy-electric print:border-gray-800 flex items-center justify-center">
+          <div className="relative w-56 h-56 rounded-full border-[6px] border-zy-electric print:border-gray-800 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-4xl font-semibold">{assessment.total_score}</div>
-              <div className="text-xs text-zy-chrome print:text-gray-600">out of 80</div>
+              <div className="text-6xl font-bold">{assessment.total_score}</div>
+              <div className="text-sm text-zy-chrome print:text-gray-600">out of 80</div>
             </div>
           </div>
-          <p className="mt-6 text-xl font-medium">{tier?.name}</p>
+          <p className="mt-8 text-2xl font-semibold">{tier?.name}</p>
           <p className="mt-2 text-zy-chrome print:text-gray-700 text-center max-w-md">
             {tier?.one_line_summary}
           </p>
