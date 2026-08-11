@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import PrintButton from "./PrintButton";
 import FullReportButton from "./FullReportButton";
 
+export const dynamic = "force-dynamic";
+
 interface PillarScoreRow {
   section_total: number;
   pillars: { pillar_name: string } | null;
