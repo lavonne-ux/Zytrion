@@ -63,7 +63,11 @@ export default function TakeAssessment() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Please try again.");
+        setError(
+          data.detail
+            ? `${data.error} DETAIL: ${data.detail}`
+            : data.error ?? "Something went wrong. Please try again."
+        );
         setSubmitting(false);
         return;
       }
