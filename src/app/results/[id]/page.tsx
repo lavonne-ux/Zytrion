@@ -92,10 +92,8 @@ export default async function ResultsPage({
 
   // Full Report content, assembled only when unlocked. Uses the same
   // pillarScores and tier already fetched above, no second query, no
-  // re-scoring. Money Containment and Tier 1 are drafted; every other
-  // combination currently renders an honest "coming soon" placeholder
-  // rather than breaking, but the report is not complete end to end
-  // yet, see fullReportContentBank.ts before treating this as launch-ready.
+  // re-scoring. All five pillars and all four tiers are fully drafted
+  // in fullReportContentBank.ts as of commit 926a6f6.
   const fullReport =
     alreadyPaid && tier?.tier_number
       ? assembleFullReport(
@@ -267,7 +265,12 @@ export default async function ResultsPage({
                   className="rounded-lg border border-white/10 print:border-gray-300 p-6"
                 >
                   <div className="flex justify-between items-baseline mb-2">
-                    <h3 className="font-medium">{p.content.headline}</h3>
+                    <div>
+                      <h3 className="font-medium">{p.pillarName}</h3>
+                      <span className="text-xs uppercase tracking-wide text-zy-chrome print:text-gray-500">
+                        {p.content.statusLabel}
+                      </span>
+                    </div>
                     <span className="text-sm text-zy-chrome print:text-gray-600">{p.score} / 16</span>
                   </div>
                   <p className="text-sm text-zy-chrome print:text-gray-700 leading-relaxed">
