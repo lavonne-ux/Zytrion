@@ -2,6 +2,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { scoreAssessment, Answers } from "@/lib/assessment/scoring";
 import { INSTRUMENT_VERSION } from "@/lib/assessment/statements";
+import { getResendClient, EMAIL_FROM } from "@/lib/email/resend";
+import { tierResultNoticeEmail } from "@/lib/email/templates";
 
 interface SubmitBody {
   contactName: string;
@@ -91,6 +93,31 @@ export async function POST(req: NextRequest) {
       { error: "Assessment saved but pillar scores failed to save.", detail: pillarError.message },
       { status: 500 }
     );
+  }
+
+  // Tier result notice. Fires after everything is durably saved. A
+  // failure here must never cost the person their result, the
+  // assessment is already recorded, so this is caught and logged, not
+  // thrown.
+  try {
+    const resend = getResendClient();
+    if (resend) {
+      const { subject, html } = tierResultNoticeEmail({
+        contactName: body.contactName,
+        businessName: body.contactBusiness || body.contactName,
+        totalScore: result.totalScore,
+        tierName: result.tierName,
+        resultsUrl: `https://zytrion.vercel.app/results/${assessmentId}`,
+      });
+      await resend.emails.send({
+        from: EMAIL_FROM,
+        to: body.contactEmail,
+        subject,
+        html,
+      });
+    }
+  } catch (err) {
+    console.error("Tier result email failed to send:", err);
   }
 
   return NextResponse.json({ assessmentId });
