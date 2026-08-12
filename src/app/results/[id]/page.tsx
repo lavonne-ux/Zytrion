@@ -1,8 +1,10 @@
-﻿import { createAdminClient } from "@/lib/supabase/admin";
+﻿// src/app/results/[id]/page.tsx
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import PrintButton from "./PrintButton";
 import FullReportButton from "./FullReportButton";
 import { PILLAR_DESCRIPTIONS } from "@/lib/assessment/pillarDescriptions";
+import { assembleFullReport } from "@/lib/assessment/fullReportContentBank";
 import Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
@@ -87,6 +89,24 @@ export default async function ResultsPage({
   const initiallyPaid = Boolean(assessment.full_report_paid_at);
   const alreadyPaid = await verifyPaymentIfNeeded(assessment.id, searchParams.session_id, initiallyPaid);
   const justPaid = searchParams.report === "paid";
+
+  // Full Report content, assembled only when unlocked. Uses the same
+  // pillarScores and tier already fetched above, no second query, no
+  // re-scoring. Money Containment and Tier 1 are drafted; every other
+  // combination currently renders an honest "coming soon" placeholder
+  // rather than breaking, but the report is not complete end to end
+  // yet, see fullReportContentBank.ts before treating this as launch-ready.
+  const fullReport =
+    alreadyPaid && tier?.tier_number
+      ? assembleFullReport(
+          assessment.total_score,
+          tier.tier_number,
+          pillarScores.map((p) => ({
+            pillarName: p.pillars?.pillar_name ?? "",
+            score: p.section_total,
+          }))
+        )
+      : null;
 
   return (
     <main id="grid-results" className="min-h-screen bg-zy-near-black text-white print:bg-white print:text-black">
@@ -198,6 +218,83 @@ export default async function ResultsPage({
           <PrintButton />
           <FullReportButton assessmentId={assessment.id} alreadyPaid={alreadyPaid} />
         </div>
+
+        {/* Full Report: renders only when unlocked. In-portal only, never
+            downloadable, per the Platform Build Specification. This is
+            new content, additive to everything above, not a replacement
+            for the free bottleneck box. */}
+        {fullReport && (
+          <div className="mt-14 print:mt-8">
+            <h2 className="text-lg font-semibold mb-6">Your Full Report</h2>
+
+            {/* Tier framing */}
+            <div className="rounded-lg border border-white/10 print:border-gray-300 p-6 bg-white/[0.02] print:bg-white mb-8">
+              <p className="text-sm uppercase tracking-wide text-zy-light-blue print:text-gray-700 mb-2">
+                {fullReport.tierFraming.title}
+              </p>
+              <p className="text-zy-chrome print:text-gray-800 leading-relaxed">
+                {fullReport.tierFraming.body}
+              </p>
+            </div>
+
+            {/* Weakest pillar deep dive: root cause and first action */}
+            <div className="rounded-lg border border-zy-electric/40 print:border-gray-400 bg-zy-electric/5 print:bg-white p-6 mb-8">
+              <p className="text-white print:text-black font-medium mb-3 leading-relaxed">
+                {fullReport.weakestPillarIntro}
+              </p>
+              {fullReport.weakestPillar.action.rootCause && (
+                <p className="text-sm text-zy-chrome print:text-gray-700 leading-relaxed mb-4">
+                  {fullReport.weakestPillar.action.rootCause}
+                </p>
+              )}
+              <p className="text-sm text-zy-chrome print:text-gray-700 mb-2">
+                <span className="text-white print:text-black font-medium">First action: </span>
+                {fullReport.weakestPillar.action.firstAction}
+              </p>
+              {fullReport.weakestPillar.action.kit && (
+                <p className="text-sm text-zy-chrome print:text-gray-700">
+                  <span className="text-white print:text-black font-medium">Recommended: </span>
+                  {fullReport.weakestPillar.action.kit}
+                </p>
+              )}
+            </div>
+
+            {/* Per-pillar deep dive, all five, in score order shown above */}
+            <div className="space-y-4">
+              {fullReport.pillars.map((p) => (
+                <div
+                  key={p.pillarName}
+                  className="rounded-lg border border-white/10 print:border-gray-300 p-6"
+                >
+                  <div className="flex justify-between items-baseline mb-2">
+                    <h3 className="font-medium">{p.content.headline}</h3>
+                    <span className="text-sm text-zy-chrome print:text-gray-600">{p.score} / 16</span>
+                  </div>
+                  <p className="text-sm text-zy-chrome print:text-gray-700 leading-relaxed">
+                    {p.content.body}
+                  </p>
+                  {p.content.evidenceGap && (
+                    <p className="mt-3 text-xs text-zy-chrome/70 print:text-gray-500 border-t border-white/10 print:border-gray-300 pt-3">
+                      Evidence gap: {p.content.evidenceGap}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Next step */}
+            {fullReport.nextStep.step && (
+              <div className="mt-8 rounded-lg border border-white/10 print:border-gray-300 p-6">
+                <p className="text-sm text-zy-chrome print:text-gray-700 leading-relaxed">
+                  {fullReport.nextStep.step}
+                </p>
+                {fullReport.nextStep.product && (
+                  <p className="mt-2 text-sm font-medium">{fullReport.nextStep.product}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer: contact and copyright */}
         <div className="mt-16 pt-8 border-t border-white/10 print:border-gray-300 text-xs text-zy-chrome print:text-gray-600 space-y-1">
