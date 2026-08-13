@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
         businessName: body.contactBusiness || body.contactName,
         totalScore: result.totalScore,
         tierName: result.tierName,
-        resultsUrl: `https://zytrion.vercel.app/results/${assessmentId}`,
+        resultsUrl: `https://www.getzytrion.com/results/${assessmentId}`,
       });
       await resend.emails.send({
         from: EMAIL_FROM,

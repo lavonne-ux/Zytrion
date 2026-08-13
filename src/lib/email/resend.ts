@@ -21,6 +21,8 @@ export function getResendClient(): Resend | null {
 
 export const EMAIL_FROM = "Zytrion Infrastructure Group <info@getzytrion.com>";
 
-// Where founder purchase notifications land. Same inbox already
-// established for Zytrion. Change here if that should be different.
-export const FOUNDER_EMAIL = "info@getzytrion.com";
+// Deliberately NOT info@getzytrion.com. A message sent from that
+// address to that same address, self to self, is exactly the pattern
+// Microsoft 365 flags as a likely spoofing attempt, confirmed the hard
+// way on August 12. Routes to a separate, already-proven inbox instead.
+export const FOUNDER_EMAIL = "lavonne@norrilssignature.com";

@@ -45,7 +45,7 @@ export async function POST(req: Request) {
           if (resend) {
             const businessName = assessment.contact_business || assessment.contact_name;
             const tierName = (assessment as any).tiers?.name ?? "";
-            const resultsUrl = `https://zytrion.vercel.app/results/${assessmentId}?report=paid`;
+            const resultsUrl = `https://www.getzytrion.com/results/${assessmentId}?report=paid`;
 
             const receipt = paymentReceiptEmail({
               contactName: assessment.contact_name,
