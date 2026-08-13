@@ -1,4 +1,4 @@
-﻿// src/app/results/[id]/page.tsx
+// src/app/results/[id]/page.tsx
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import PrintButton from "./PrintButton";
@@ -6,6 +6,7 @@ import FullReportButton from "./FullReportButton";
 import { PILLAR_DESCRIPTIONS } from "@/lib/assessment/pillarDescriptions";
 import { assembleFullReport } from "@/lib/assessment/fullReportContentBank";
 import Stripe from "stripe";
+
 
 export const dynamic = "force-dynamic";
 
@@ -62,13 +63,14 @@ async function verifyPaymentIfNeeded(
   return alreadyPaid;
 }
 
-export default async function ResultsPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { report?: string; session_id?: string };
-}) {
+export default async function ResultsPage(
+  props: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ report?: string; session_id?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const data = await getAssessment(params.id);
   if (!data || !data.assessment) return notFound();
 
