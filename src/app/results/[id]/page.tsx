@@ -134,7 +134,7 @@ export default async function ResultsPage(
         )}
 
         <p className="text-zy-light-blue print:text-gray-700 text-sm font-medium tracking-wide uppercase mb-2">
-          Your GRID Diagnostic Result
+          Your GRID Result
         </p>
         <h1 className="text-2xl font-semibold mb-1">
           {businessName}

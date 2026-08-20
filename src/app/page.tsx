@@ -54,8 +54,7 @@ export default function Home() {
             means something much simpler: can your business prove, on
             paper, who is allowed to make decisions, who is responsible
             for what, and where the money is going? Lenders, investors,
-            and auditors all check for the same five things. The GRID
-            Diagnostic scores your business against exactly those five,
+            and auditors all check for the same five things. The GRID scores your business against exactly those five,
             and tells you, honestly, which one is the weakest link in
             your structure right now.
           </p>

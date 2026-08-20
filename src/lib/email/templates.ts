@@ -1,4 +1,4 @@
-﻿const BRAND = {
+const BRAND = {
   nearBlack: "#080C1A",
   chrome: "#C7CDD6",
   electric: "#1565FF",
@@ -86,7 +86,7 @@ export function tierResultNoticeEmail(params: TierResultNoticeParams): {
   const body = `
     <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
-      Your GRID Diagnostic result for ${businessName} is ready.
+      Your GRID result for ${businessName} is ready.
     </p>
     <p style="font-size:32px;font-weight:700;color:#ffffff;margin:24px 0 4px 0;">
       ${totalScore} <span style="font-size:16px;font-weight:400;color:${BRAND.chrome};">out of 80</span>
@@ -100,7 +100,7 @@ export function tierResultNoticeEmail(params: TierResultNoticeParams): {
     ${button("View Your Full Result", resultsUrl)}
   `;
   return {
-    subject: "Your GRID Diagnostic Result Is Ready",
+    subject: "Your GRID result Is Ready",
     html: emailShell(body),
   };
 }
