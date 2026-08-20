@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Call the stats refresh endpoint
         run: |
-          curl -f "https://www.getzytrion.com/api/cron/refresh-stats?secret=${{ secrets.STATS_REFRESH_SECRET }}"
+          curl -s -w "\nHTTP Status: %{http_code}\n" "https://www.getzytrion.com/api/cron/refresh-stats?secret=${{ secrets.STATS_REFRESH_SECRET }}"
