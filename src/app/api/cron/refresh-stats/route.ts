@@ -6,6 +6,9 @@ import { NextResponse } from "next/server";
 // which caps Hobby at once a day), so this stays on Hobby and refreshes
 // hourly instead. Protected by a shared secret in the query string, since
 // external callers don't get Vercel's automatic CRON_SECRET header.
+//
+// Display labels for each stat_key live in the homepage component, not
+// here, this table has no label column.
 export async function GET(req: Request) {
   const secret = new URL(req.url).searchParams.get("secret");
   if (!process.env.STATS_REFRESH_SECRET || secret !== process.env.STATS_REFRESH_SECRET) {
@@ -45,19 +48,15 @@ export async function GET(req: Request) {
     [
       {
         stat_key: "assessments_completed",
-        label: "Free diagnostics completed",
-        value: String(assessmentsCompleted ?? 0),
+        stat_value: String(assessmentsCompleted ?? 0),
         source: "Zytrion live data",
-        is_live: true,
-        last_updated: now,
+        updated_at: now,
       },
       {
         stat_key: "avg_score",
-        label: "Average score",
-        value: avgScore !== null ? String(avgScore) : "\u2014",
+        stat_value: avgScore !== null ? String(avgScore) : "\u2014",
         source: "Zytrion live data",
-        is_live: true,
-        last_updated: now,
+        updated_at: now,
       },
     ],
     { onConflict: "stat_key" }
