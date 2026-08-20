@@ -1,0 +1,14 @@
+name: Refresh Zytrion Stats
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the stats refresh endpoint
+        run: |
+          curl -f "https://www.getzytrion.com/api/cron/refresh-stats?secret=${{ secrets.STATS_REFRESH_SECRET }}"
