@@ -1,4 +1,5 @@
-import Link from "next/link";
+﻿import Link from "next/link";
+import StatStrip from "@/components/StatStrip";
 
 
 export default function Home() {
@@ -41,6 +42,8 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      <StatStrip />
 
       {/* Plain-language explainer */}
       <section className="max-w-3xl mx-auto px-6 pb-24">
