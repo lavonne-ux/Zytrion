@@ -1,26 +1,21 @@
 ﻿const PILLARS = [
   {
-    number: "01",
     name: "Authority Clarity",
     description: "Who is allowed to decide, documented and easy to produce.",
   },
   {
-    number: "02",
     name: "Money Containment",
     description: "Where the money goes, and who is allowed to move it.",
   },
   {
-    number: "03",
     name: "Responsibility Ownership",
     description: "Who owns each task, without anyone guessing.",
   },
   {
-    number: "04",
     name: "Evidence Integrity",
     description: "Proof that holds up the moment someone asks for it.",
   },
   {
-    number: "05",
     name: "Governance Discipline",
     description: "The habits that keep the other four running.",
   },
@@ -28,23 +23,40 @@
 
 export default function FivePillars() {
   return (
-    <section className="max-w-5xl mx-auto px-6 pb-24">
+    <section className="max-w-5xl mx-auto px-6 pt-20 pb-24 border-t border-white/5">
+      <p className="text-xs font-semibold tracking-[0.2em] uppercase text-zy-light-blue text-center mb-3">
+        The Score, Broken Down
+      </p>
       <h2 className="text-xl font-semibold text-white text-center mb-2">
         The Five Pillars
       </h2>
-      <p className="text-zy-chrome text-center mb-12 max-w-xl mx-auto">
-        Every GRID score breaks down into these five, the same five
+      <p className="text-zy-chrome text-center mb-10 max-w-xl mx-auto">
+        Every GRID score is these five, in equal share, the same five
         lenders, investors, and auditors check.
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
+
+      <div
+        className="relative h-2 rounded-full overflow-hidden mb-12"
+        style={{
+          background:
+            "linear-gradient(90deg, #0A0F2E 0%, #0B3DBF 25%, #1565FF 50%, #4AB3E8 75%, #C7CDD6 100%)",
+        }}
+      >
+        {[20, 40, 60, 80].map((pct) => (
+          <div
+            key={pct}
+            className="absolute top-0 bottom-0 w-px bg-zy-near-black/50"
+            style={{ left: `${pct}%` }}
+          />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {PILLARS.map((pillar) => (
-          <div key={pillar.number} className="text-center">
-            <div className="mb-3 flex justify-center">
-              <span className="text-2xl font-bold text-zy-electric">
-                {pillar.number}
-              </span>
-            </div>
-            <div className="h-px w-8 bg-zy-silver/30 mx-auto mb-4" />
+          <div
+            key={pillar.name}
+            className="rounded-xl border border-white/10 bg-white/[0.02] p-6 text-center transition-all duration-200 hover:border-white/20 hover:-translate-y-0.5"
+          >
             <h3 className="text-white font-semibold mb-2">{pillar.name}</h3>
             <p className="text-sm text-zy-chrome leading-relaxed">
               {pillar.description}

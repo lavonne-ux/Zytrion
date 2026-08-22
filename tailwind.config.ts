@@ -1,4 +1,4 @@
-import type { Config } from "tailwindcss";
+﻿import type { Config } from "tailwindcss";
 // Zytrion brand tokens, per the Platform Build Specification.
 // All prior green references are retired; this palette is the only one in use.
 const config: Config = {
@@ -13,6 +13,7 @@ const config: Config = {
         "zy-silver": "#C7CDD6",     // chrome/steel, dividers
         "zy-chrome": "#C7CDD6",     // same steel/chrome silver as zy-silver; components across the site use this exact class name for body and secondary text, but it was never defined here, so it rendered as nothing until now
         "zy-near-black": "#080C1A", // body text on light ground
+        "zy-purple": "#7D5FD9",     // restrained tertiary accent, ambient depth only, distinct from ATF's #7D49FF, never dominant
       },
       fontFamily: {
         sans: ["Calibri", "Segoe UI", "system-ui", "sans-serif"],

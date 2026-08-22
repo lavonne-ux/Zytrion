@@ -8,41 +8,50 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zy-near-black text-white">
       {/* Hero */}
-      <section className="max-w-3xl mx-auto px-6 pt-20 pb-20 text-center">
-        <div className="flex flex-col items-center gap-3 mb-12">
-          <img
-            src="/zytrion-orb-logo.png"
-            alt="Zytrion Infrastructure Group"
-            className="w-16 h-16"
-          />
-          <div className="text-center">
-            <p className="text-lg font-semibold tracking-wide">Zytrion Infrastructure Group</p>
-            <p className="text-sm text-zy-chrome">The Momentum of Business</p>
+      <section className="relative overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 800px 420px at 50% 78%, rgba(125, 95, 217, 0.18), transparent 70%), linear-gradient(180deg, #0A0F2E 0%, #080C1A 100%)",
+          }}
+        />
+        <div className="relative max-w-3xl mx-auto px-6 pt-20 pb-20 text-center">
+          <div className="flex flex-col items-center gap-3 mb-12">
+            <img
+              src="/zytrion-orb-logo.png"
+              alt="Zytrion Infrastructure Group"
+              className="w-16 h-16"
+            />
+            <div className="text-center">
+              <p className="text-lg font-semibold tracking-wide">Zytrion Infrastructure Group</p>
+              <p className="text-sm text-zy-chrome">The Momentum of Business</p>
+            </div>
           </div>
-        </div>
 
-        <h1 className="text-3xl md:text-4xl font-semibold leading-tight text-white">
-          If the bank asked you to prove who is allowed to spend your
-          company&apos;s money, could you answer in five seconds?
-        </h1>
-        <p className="mt-6 text-lg text-zy-chrome leading-relaxed">
-          Most founder-led businesses can&apos;t. Not because they&apos;re
-          careless, because no one ever showed them what to build. Loan
-          denials, mixed personal and business finances, and a business
-          that stops the moment you step away all trace back to the same
-          missing structure.
-        </p>
-        <div className="mt-10">
-          <Link
-            href="/assessment"
-            className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-8 py-4 rounded-md"
-          >
-            Take the Diagnostic
-          </Link>
-          <p className="mt-3 text-sm text-zy-chrome/70">
-            Free during our founding period. Takes about fifteen minutes.
+          <h1 className="text-3xl md:text-4xl font-semibold leading-tight text-white">
+            If the bank asked you to prove who is allowed to spend your
+            company&apos;s money, could you answer in five seconds?
+          </h1>
+          <p className="mt-6 text-lg text-zy-chrome leading-relaxed">
+            Most founder-led businesses can&apos;t. Not because they&apos;re
+            careless, because no one ever showed them what to build. Loan
+            denials, mixed personal and business finances, and a business
+            that stops the moment you step away all trace back to the same
+            missing structure.
           </p>
-          <FounderCount />
+          <div className="mt-10">
+            <Link
+              href="/assessment"
+              className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-8 py-4 rounded-md"
+            >
+              Take the Diagnostic
+            </Link>
+            <p className="mt-3 text-sm text-zy-chrome/70">
+              Free during our founding period. Takes about fifteen minutes.
+            </p>
+            <FounderCount />
+          </div>
         </div>
       </section>
 
