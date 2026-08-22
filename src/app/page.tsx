@@ -22,6 +22,10 @@ export default function Home() {
             backgroundImage:
               "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
             backgroundSize: "56px 56px",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, black 0%, black 55%, transparent 92%)",
+            maskImage:
+              "linear-gradient(to bottom, black 0%, black 55%, transparent 92%)",
           }}
         />
         <div

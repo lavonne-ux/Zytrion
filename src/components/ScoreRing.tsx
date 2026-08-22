@@ -1,37 +1,17 @@
-﻿const ARCS = [
-  { color: "#0B3DBF", rotate: -90 },
-  { color: "#1565FF", rotate: -18 },
-  { color: "#4AB3E8", rotate: 54 },
-  { color: "#C7CDD6", rotate: 126 },
-  { color: "#7D5FD9", rotate: 198 },
-];
-
-const RADIUS = 84;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const ARC_LENGTH = 94;
-
-export default function ScoreRing() {
+﻿export default function ScoreRing() {
   return (
     <div className="relative w-[200px] h-[200px] mx-auto">
-      <svg viewBox="0 0 200 200" className="absolute inset-0 w-full h-full">
-        {ARCS.map((arc, i) => (
-          <circle
-            key={i}
-            cx="100"
-            cy="100"
-            r={RADIUS}
-            fill="none"
-            stroke={arc.color}
-            strokeWidth="12"
-            strokeLinecap="round"
-            strokeDasharray={`${ARC_LENGTH} ${CIRCUMFERENCE}`}
-            strokeDashoffset={ARC_LENGTH}
-            transform={`rotate(${arc.rotate} 100 100)`}
-            className="ring-arc"
-            style={{ animationDelay: `${0.25 + i * 0.15}s` }}
-          />
-        ))}
-      </svg>
+      <div
+        className="absolute inset-0 rounded-full ring-gradient"
+        style={{
+          background:
+            "conic-gradient(from 0deg, #0A0F2E 0%, #0B3DBF 20%, #1565FF 40%, #4AB3E8 60%, #C7CDD6 75%, #6D28D9 90%, #0A0F2E 100%)",
+          WebkitMaskImage:
+            "radial-gradient(closest-side, transparent 66%, black 68%, black 88%, transparent 90%)",
+          maskImage:
+            "radial-gradient(closest-side, transparent 66%, black 68%, black 88%, transparent 90%)",
+        }}
+      />
       <div className="absolute inset-0 flex items-center justify-center">
         <img
           src="/zytrion-orb-logo.png"
