@@ -12,9 +12,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const { kitPhaseId, status } = await req.json();
+  const { kitPhaseId, status, evidenceNote } = await req.json();
   if (!kitPhaseId || !["not_started", "in_progress", "complete"].includes(status)) {
     return NextResponse.json({ error: "Missing or invalid kitPhaseId/status." }, { status: 400 });
+  }
+
+  if (status === "complete" && (!evidenceNote || !evidenceNote.trim())) {
+    return NextResponse.json(
+      { error: "Describe what you completed before marking this phase done." },
+      { status: 400 }
+    );
   }
 
   const { error: progressError } = await supabase.from("client_phase_progress").upsert(
@@ -23,6 +30,10 @@ export async function POST(req: NextRequest) {
       kit_phase_id: kitPhaseId,
       status,
       completed_at: status === "complete" ? new Date().toISOString() : null,
+      evidence_artifact_ref:
+        status === "complete"
+          ? { note: evidenceNote.trim(), submitted_at: new Date().toISOString() }
+          : null,
     },
     { onConflict: "client_id,kit_phase_id" }
   );
