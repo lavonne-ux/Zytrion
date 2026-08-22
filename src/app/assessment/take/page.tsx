@@ -1,4 +1,5 @@
 ﻿"use client";
+   import Link from "next/link";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -209,18 +210,7 @@ export default function TakeAssessment() {
                 onChange={(e) => setTermsAccepted(e.target.checked)}
                 className="mt-1 w-4 h-4 accent-zy-electric shrink-0"
               />
-              <span>
-                I have read and agree to Zytrion&apos;s{" "}
-                
-                  href="/terms"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zy-light-blue underline hover:text-white"
-                >
-                  Terms of Use
-                </a>
-                , including the GRID Restricted Use and Confidentiality section.
-              </span>
+              <span>I have read and agree to Zytrion&apos;s <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-zy-light-blue underline hover:text-white">Terms of Use</Link>, including the GRID Restricted Use and Confidentiality section.</span>
             </label>
 
             {error && <p className="mt-4 text-red-400 text-sm">{error}</p>}
