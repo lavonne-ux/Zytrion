@@ -2,6 +2,7 @@
 import StatStrip from "@/components/StatStrip";
 import FounderCount from "@/components/FounderCount";
 import FivePillars from "@/components/FivePillars";
+import ScoreRing from "@/components/ScoreRing";
 
 
 export default function Home() {
@@ -32,11 +33,7 @@ export default function Home() {
         />
         <div className="relative max-w-3xl mx-auto px-6 pt-20 pb-20 text-center animate-fade-up">
           <div className="flex flex-col items-center gap-3 mb-12">
-            <img
-              src="/zytrion-orb-logo.png"
-              alt="Zytrion Infrastructure Group"
-              className="w-16 h-16"
-            />
+            <ScoreRing />
             <div className="text-center">
               <p className="text-lg font-semibold tracking-wide">Zytrion Infrastructure Group</p>
               <p className="text-sm text-zy-chrome">The Momentum of Business</p>
