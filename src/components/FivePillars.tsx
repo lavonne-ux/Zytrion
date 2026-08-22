@@ -24,7 +24,7 @@
 export default function FivePillars() {
   return (
     <section className="max-w-5xl mx-auto px-6 pt-20 pb-24 border-t border-white/5">
-      <p className="text-xs font-semibold tracking-[0.2em] uppercase text-zy-light-blue text-center mb-3">
+      <p className="gradient-text text-xs font-semibold tracking-[0.2em] uppercase text-center mb-3">
         The Score, Broken Down
       </p>
       <h2 className="text-xl font-semibold text-white text-center mb-2">

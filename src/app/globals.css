@@ -8,6 +8,14 @@ body {
   font-family: Calibri, "Segoe UI", system-ui, sans-serif;
 }
 
+.gradient-text {
+  background: linear-gradient(90deg, #0B3DBF, #1565FF, #4AB3E8, #6D28D9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

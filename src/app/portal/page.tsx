@@ -36,7 +36,7 @@ export default async function PortalPage() {
       <div className="max-w-2xl mx-auto px-6 py-16">
         <div className="flex items-center justify-between mb-10">
           <div>
-            <p className="text-zy-light-blue text-sm font-medium tracking-wide uppercase mb-1">
+            <p className="gradient-text text-sm font-medium tracking-wide uppercase mb-1">
               Kit Portal
             </p>
             <h1 className="text-2xl font-semibold">
