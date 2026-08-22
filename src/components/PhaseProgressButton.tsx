@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function PhaseProgressButton({
@@ -11,8 +11,13 @@ export default function PhaseProgressButton({
   status: "not_started" | "in_progress" | "complete";
 }) {
   const router = useRouter();
+  const [localStatus, setLocalStatus] = useState(status);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalStatus(status);
+  }, [status]);
 
   async function updateStatus(newStatus: "in_progress" | "complete") {
     setError(null);
@@ -29,21 +34,22 @@ export default function PhaseProgressButton({
         setLoading(false);
         return;
       }
-      router.refresh();
+      setLocalStatus(newStatus);
       setLoading(false);
+      router.refresh();
     } catch {
       setError("Could not reach the server.");
       setLoading(false);
     }
   }
 
-  if (status === "complete") {
+  if (localStatus === "complete") {
     return <p className="text-sm text-zy-electric font-medium">Complete</p>;
   }
 
   return (
     <div>
-      {status === "not_started" && (
+      {localStatus === "not_started" && (
         <button
           type="button"
           onClick={() => updateStatus("in_progress")}
@@ -53,7 +59,7 @@ export default function PhaseProgressButton({
           {loading ? "Starting..." : "Start This Phase"}
         </button>
       )}
-      {status === "in_progress" && (
+      {localStatus === "in_progress" && (
         <button
           type="button"
           onClick={() => updateStatus("complete")}
