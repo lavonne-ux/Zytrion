@@ -2,6 +2,9 @@
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import BuyKitButton from "@/components/BuyKitButton";
+import PhaseProgressButton from "@/components/PhaseProgressButton";
+
+type PhaseStatus = "not_started" | "in_progress" | "complete";
 
 export default async function PortalPage() {
   const supabase = await createClient();
@@ -21,10 +24,47 @@ export default async function PortalPage() {
 
   const { data: enrollments } = await supabase
     .from("client_kit_enrollments")
-    .select("id, kit_id, status, current_phase, started_at")
+    .select("id, kit_id, status, current_phase, started_at, kits ( title )")
     .eq("client_id", user.id);
 
   const hasActiveKit = enrollments && enrollments.length > 0;
+  const activeEnrollment = hasActiveKit ? enrollments![0] : null;
+
+  let phasesWithProgress: Array<{
+    id: string;
+    phase_number: number;
+    day_start: number | null;
+    day_end: number | null;
+    title: string;
+    objective: string | null;
+    evidence_produced: string | null;
+    tools: { tool_name: string; portal_render_type: string; description: string | null } | null;
+    status: PhaseStatus;
+  }> = [];
+
+  if (activeEnrollment) {
+    const { data: phases } = await supabase
+      .from("kit_phases")
+      .select(
+        "id, phase_number, day_start, day_end, title, objective, evidence_produced, tools ( tool_name, portal_render_type, description )"
+      )
+      .eq("kit_id", activeEnrollment.kit_id)
+      .order("sort_order");
+
+    const { data: progress } = await supabase
+      .from("client_phase_progress")
+      .select("kit_phase_id, status")
+      .eq("client_id", user.id);
+
+    const progressMap = Object.fromEntries(
+      (progress ?? []).map((p) => [p.kit_phase_id, p.status as PhaseStatus])
+    );
+
+    phasesWithProgress = (phases ?? []).map((p: any) => ({
+      ...p,
+      status: progressMap[p.id] ?? "not_started",
+    }));
+  }
 
   const { data: kits } = await supabase
     .from("kits")
@@ -46,16 +86,51 @@ export default async function PortalPage() {
           <SignOutButton />
         </div>
 
-        {hasActiveKit ? (
-          <div className="space-y-4">
-            {enrollments!.map((e) => (
-              <div key={e.id} className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
-                <p className="text-white font-medium">Kit enrollment</p>
-                <p className="text-sm text-zy-chrome mt-1">
-                  Status: {e.status}, currently on phase {e.current_phase}
-                </p>
-              </div>
-            ))}
+        {activeEnrollment ? (
+          <div>
+            <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02] mb-8">
+              <p className="text-white font-semibold text-lg">
+                {(activeEnrollment as any).kits?.title ?? "Your Kit"}
+              </p>
+              <p className="text-sm text-zy-chrome mt-1">
+                Status: {activeEnrollment.status}, currently on phase {activeEnrollment.current_phase}
+              </p>
+            </div>
+
+            <h2 className="text-xl font-semibold text-white mb-6">Your Phases</h2>
+            <div className="space-y-4">
+              {phasesWithProgress.map((phase) => (
+                <div
+                  key={phase.id}
+                  className="border border-white/10 rounded-lg p-6 bg-white/[0.02]"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-zy-light-blue text-xs font-semibold uppercase tracking-wide">
+                      Phase {phase.phase_number}
+                      {phase.day_start && phase.day_end
+                        ? `, Days ${phase.day_start}\u2013${phase.day_end}`
+                        : ""}
+                    </p>
+                  </div>
+                  <h3 className="text-white font-semibold mb-2">{phase.title}</h3>
+                  {phase.objective && (
+                    <p className="text-sm text-zy-chrome mb-4">{phase.objective}</p>
+                  )}
+                  {phase.tools && (
+                    <div className="border border-white/10 rounded-md p-4 bg-white/[0.02] mb-4">
+                      <p className="text-xs text-zy-chrome/70 uppercase tracking-wide mb-1">
+                        {phase.tools.portal_render_type}
+                      </p>
+                      <p className="text-white font-medium mb-1">{phase.tools.tool_name}</p>
+                      {phase.tools.description && (
+                        <p className="text-sm text-zy-chrome">{phase.tools.description}</p>
+                      )}
+                    </div>
+                  )}
+                  <PhaseProgressButton kitPhaseId={phase.id} status={phase.status} />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div>
@@ -100,6 +175,3 @@ export default async function PortalPage() {
     </main>
   );
 }
-
-
-
