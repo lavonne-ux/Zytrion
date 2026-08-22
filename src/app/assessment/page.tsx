@@ -5,7 +5,7 @@ export default function AssessmentIntro() {
   return (
     <main className="min-h-screen bg-zy-near-black text-white">
       <div className="max-w-2xl mx-auto px-6 py-20">
-        <p className="gradient-text text-lg font-bold tracking-wide uppercase mb-3">
+        <p className="text-zy-light-blue text-lg font-bold tracking-wide uppercase mb-3">
           GRID
         </p>
         <h1 className="text-3xl font-semibold mb-6">
@@ -53,5 +53,6 @@ export default function AssessmentIntro() {
     </main>
   );
 }
+
 
 
