@@ -13,7 +13,7 @@ export default function Home() {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 800px 420px at 50% 78%, rgba(125, 95, 217, 0.18), transparent 70%), linear-gradient(180deg, #0A0F2E 0%, #080C1A 100%)",
+              "radial-gradient(ellipse 900px 600px at 50% 60%, rgba(125, 95, 217, 0.45) 0%, rgba(125, 95, 217, 0.15) 45%, transparent 75%), linear-gradient(180deg, #0A0F2E 0%, #080C1A 100%)",
           }}
         />
         <div className="relative max-w-3xl mx-auto px-6 pt-20 pb-20 text-center">
