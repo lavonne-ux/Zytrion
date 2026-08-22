@@ -1,0 +1,269 @@
+﻿import Link from "next/link";
+import { TERMS_VERSION } from "@/lib/legal/terms";
+
+type Block =
+  | { type: "p"; text: string }
+  | { type: "h3"; text: string }
+  | { type: "bullets"; items: string[] };
+
+type LegalSection = { heading: string; blocks: Block[] };
+
+const SECTIONS: LegalSection[] = [
+  {
+    heading: "Acceptance of Terms",
+    blocks: [
+      {
+        type: "p",
+        text: "These Terms of Use govern your access to and use of the website www.getzytrion.com and all related services, diagnostics, tools, products, and content provided by Zytrion Infrastructure Group, Inc., a Georgia corporation (referred to throughout these Terms as \u201CZytrion,\u201D \u201Cwe,\u201D \u201Cus,\u201D or \u201Cour\u201D). By accessing our website or using any of our services, you agree to be bound by these Terms of Use. If you do not agree to these terms, do not access or use our services.",
+      },
+      {
+        type: "p",
+        text: "Access to GRID, ZAID, and any other paid or free Zytrion service requires your affirmative acceptance of these Terms through a checkbox or equivalent action at the point of access or purchase. We retain a record of the version of these Terms you accepted, together with the date, time, and the account information associated with that acceptance.",
+      },
+    ],
+  },
+  {
+    heading: "Description of Services",
+    blocks: [
+      {
+        type: "p",
+        text: "Zytrion provides governance readiness and artificial intelligence diagnostic tools, educational materials, implementation resources, advisory services, and certification programs for business owners and enterprises. Our services include, but are not limited to, the GRID diagnostic, the ZAID diagnostic, Score Interpretation Guides, Implementation Kits, Roadmap Sequences, the Governance Stabilization Sprint, the Certified Governance Advisor program, and the Zytrion Enterprise in Motion manual.",
+      },
+    ],
+  },
+  {
+    heading: "Eligibility",
+    blocks: [
+      {
+        type: "p",
+        text: "You must be at least 18 years of age and have the legal authority to enter into binding agreements to use our services. By using our services, you represent that you meet these requirements.",
+      },
+    ],
+  },
+  {
+    heading: "Account and Access",
+    blocks: [
+      {
+        type: "p",
+        text: "Certain services require you to provide accurate and complete information, including your name, email address, and business details. You are responsible for maintaining the confidentiality of any account credentials, diagnostic links, or access tokens provided to you.",
+      },
+    ],
+  },
+  {
+    heading: "Purchases and Payments",
+    blocks: [
+      {
+        type: "p",
+        text: "All purchases are processed through Stripe. Prices for products and services are listed on our website and in our communications. We reserve the right to change pricing at any time, but changes will not affect purchases already completed.",
+      },
+      {
+        type: "p",
+        text: "All sales are final. Due to the digital nature of our products and the immediate delivery of diagnostic results and related materials, we do not offer refunds unless required by applicable law. If you believe you have been charged in error, contact us at info@getzytrion.com within 14 days of the transaction.",
+      },
+    ],
+  },
+  {
+    heading: "Intellectual Property",
+    blocks: [
+      {
+        type: "p",
+        text: "All content, materials, methodologies, diagnostics, frameworks, tools, documents, and branding associated with Zytrion are the exclusive intellectual property of Zytrion Infrastructure Group, Inc.",
+      },
+      {
+        type: "p",
+        text: "You may not reproduce, distribute, modify, create derivative works from, publicly display, republish, download, store, or transmit any of our intellectual property without our prior written consent. Purchased materials are licensed for your personal or internal business use only.",
+      },
+    ],
+  },
+  {
+    heading: "GRID Methodology: Restricted Use and Confidentiality",
+    blocks: [
+      {
+        type: "p",
+        text: "Zytrion's diagnostic and advisory offerings depend on a proprietary methodology that took years to develop and continues to be refined. This section governs how that methodology may be used by anyone who accesses GRID, ZAID, or any other Zytrion diagnostic, whether as a free participant, a paying customer, or a business owner exploring our platform.",
+      },
+      { type: "h3", text: "Confidential Methodology Defined" },
+      {
+        type: "p",
+        text: "Confidential Methodology means the scoring architecture, question sequencing, pillar and flow weighting, decision logic, tier and readiness classifications, evidence standards, scoring explanations, templates, training materials, and any nonpublic report, rubric, or strategy document generated by or disclosed through a Zytrion diagnostic. It does not include information you developed independently without reference to our methodology, information that is publicly available through means other than a breach of these Terms, or information you lawfully received from a third party with no duty of confidentiality attached.",
+      },
+      { type: "h3", text: "Your Obligations" },
+      {
+        type: "p",
+        text: "By accessing GRID, ZAID, or any other Zytrion diagnostic, you agree to the following:",
+      },
+      {
+        type: "bullets",
+        items: [
+          "You will use the diagnostic and any resulting report solely for your own internal business evaluation and readiness planning.",
+          "You will not copy, reproduce, extract, scrape, reverse engineer, decompile, benchmark for the purpose of replication, adapt, commercialize, sublicense, or use our Confidential Methodology to train an artificial intelligence system or model.",
+          "You will not build, support, or contribute to a competing diagnostic, assessment, or advisory offering using our Confidential Methodology.",
+          "You will not share your diagnostic content, report, scoring rationale, or any nonpublic Zytrion material outside your own organization, except with an advisor who is separately bound to confidentiality.",
+          "You will preserve all copyright, trademark, and proprietary notices appearing on any Zytrion material.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Nothing in these Terms grants you ownership of GRID, ZAID, or any Zytrion methodology, nor does it grant you any right to develop a derivative product or service based on what you learn through your participation. This restriction applies to your use and disclosure of our Confidential Methodology specifically. Nothing in this section is intended to prevent you from operating your own business, consulting practice, or advisory service in the ordinary course.",
+      },
+      {
+        type: "p",
+        text: "Access to deeper scoring rubrics, internal operational materials, partner playbooks, or cohort administration tools is available only under a separate written confidentiality agreement. If you are interested in that level of access, contact us using the information at the end of these Terms.",
+      },
+    ],
+  },
+  {
+    heading: "Diagnostic Results and Advisory Disclaimer",
+    blocks: [
+      {
+        type: "p",
+        text: "GRID, ZAID, and related scoring tools are educational and diagnostic instruments designed to evaluate governance and artificial intelligence readiness based on self-reported information. Diagnostic results, tier placements, and recommendations are provided for informational and educational purposes only.",
+      },
+      {
+        type: "p",
+        text: "Zytrion does not provide legal, financial, tax, or investment advice. Our diagnostics and recommendations are not a substitute for professional legal counsel, certified public accounting, or licensed financial advising.",
+      },
+      {
+        type: "p",
+        text: "We make no guarantees regarding the outcomes of implementing our recommendations, achieving specific tier placements, securing funding, or achieving any particular business result.",
+      },
+    ],
+  },
+  {
+    heading: "Certified Governance Advisor Program",
+    blocks: [
+      {
+        type: "p",
+        text: "Participation in the Certified Governance Advisor program is subject to completion of the required curriculum, passing the certification examination, and adherence to the Zytrion Code of Conduct. Certification is valid for 12 months and must be renewed through the annual retake process.",
+      },
+    ],
+  },
+  {
+    heading: "Referring Partner and Institutional Program",
+    blocks: [
+      {
+        type: "p",
+        text: "Participation in the Referring Partner program is governed by the Referring Partner Onboarding Pack and associated agreements. Zytrion reserves the right to modify the referral program terms, suspend partner accounts for inactivity, or terminate partnerships for cause.",
+      },
+      {
+        type: "p",
+        text: "Referral, cohort, lending, CDFI, SBDC, and other institutional relationships carry an additional non-circumvention obligation, addressed in a separate Institutional Partner Agreement applicable to that relationship. These Terms of Use do not impose a non-circumvention obligation on ordinary GRID or ZAID participants.",
+      },
+    ],
+  },
+  {
+    heading: "Prohibited Conduct",
+    blocks: [
+      {
+        type: "p",
+        text: "You agree not to use our services for any unlawful purpose or in violation of these Terms. You may not misrepresent your identity, business structure, or diagnostic responses, or share, resell, or redistribute purchased materials, diagnostic links, or access credentials. Restrictions specific to our diagnostic methodology are set out in the GRID Methodology: Restricted Use and Confidentiality section above.",
+      },
+    ],
+  },
+  {
+    heading: "Limitation of Liability",
+    blocks: [
+      {
+        type: "p",
+        text: "To the maximum extent permitted by applicable law, Zytrion, its officers, directors, employees, and agents shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of our services.",
+      },
+      {
+        type: "p",
+        text: "Our total liability to you for any claim arising out of or related to these Terms or our services shall not exceed the amount you paid to us in the 12 months preceding the claim.",
+      },
+    ],
+  },
+  {
+    heading: "Indemnification",
+    blocks: [
+      {
+        type: "p",
+        text: "You agree to indemnify, defend, and hold harmless Zytrion Infrastructure Group, Inc., its officers, directors, employees, agents, and affiliates from and against any claims, liabilities, damages, losses, and expenses, including reasonable legal fees, arising out of your use of our services or your violation of these Terms.",
+      },
+    ],
+  },
+  {
+    heading: "Governing Law",
+    blocks: [
+      {
+        type: "p",
+        text: "These Terms of Use are governed by and construed in accordance with the laws of the State of Georgia. Any disputes arising under these Terms shall be resolved in the state or federal courts located in the State of Georgia.",
+      },
+    ],
+  },
+  {
+    heading: "Modifications",
+    blocks: [
+      {
+        type: "p",
+        text: "We reserve the right to modify these Terms of Use at any time. Changes will be effective upon posting to our website with an updated effective date. If we make a material change to the GRID Methodology: Restricted Use and Confidentiality section, your continued access to GRID, ZAID, or any other diagnostic after that change requires renewed acceptance of the updated Terms at your next point of access.",
+      },
+    ],
+  },
+  {
+    heading: "Severability",
+    blocks: [
+      {
+        type: "p",
+        text: "If any provision of these Terms of Use is found to be unenforceable or invalid, that provision shall be limited or eliminated to the minimum extent necessary so that the remaining provisions remain in full force and effect.",
+      },
+    ],
+  },
+  {
+    heading: "Contact Information",
+    blocks: [
+      {
+        type: "p",
+        text: "If you have questions about these Terms of Use, contact us at Zytrion Infrastructure Group, Inc., info@getzytrion.com, www.getzytrion.com.",
+      },
+    ],
+  },
+];
+
+export default function TermsPage() {
+  return (
+    <main className="min-h-screen bg-zy-near-black text-white">
+      <div className="max-w-2xl mx-auto px-6 py-16">
+        <Link href="/" className="text-sm text-zy-light-blue hover:text-white">
+          &larr; Back to getzytrion.com
+        </Link>
+
+        <h1 className="text-3xl font-semibold mt-6 mb-2">Terms of Use</h1>
+        <p className="text-sm text-zy-chrome/70 mb-12">
+          Effective Date: {TERMS_VERSION}
+        </p>
+
+        {SECTIONS.map((section) => (
+          <div key={section.heading} className="mb-10">
+            <h2 className="text-xl font-semibold text-white mb-4 pb-2 border-b border-white/10">
+              {section.heading}
+            </h2>
+            {section.blocks.map((block, i) => {
+              if (block.type === "h3") {
+                return (
+                  <h3 key={i} className="text-white font-semibold italic mt-4 mb-2">
+                    {block.text}
+                  </h3>
+                );
+              }
+              if (block.type === "bullets") {
+                return (
+                  <ul key={i} className="list-disc pl-6 space-y-2 mb-4 text-zy-chrome">
+                    {block.items.map((item, j) => (
+                      <li key={j}>{item}</li>
+                    ))}
+                  </ul>
+                );
+              }
+              return (
+                <p key={i} className="text-zy-chrome leading-relaxed mb-4">
+                  {block.text}
+                </p>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}

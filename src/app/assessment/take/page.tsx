@@ -21,6 +21,7 @@ export default function TakeAssessment() {
   const [contactBusiness, setContactBusiness] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +53,10 @@ export default function TakeAssessment() {
       setError("Name and email are required to see your results.");
       return;
     }
+    if (!termsAccepted) {
+      setError("Please agree to the Terms of Use to see your results.");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/assessment/submit", {
@@ -63,6 +68,7 @@ export default function TakeAssessment() {
           contactEmail,
           contactPhone,
           answers,
+          termsAccepted: true,
         }),
       });
       const data = await res.json();
@@ -195,6 +201,27 @@ export default function TakeAssessment() {
                 className="w-full bg-white/5 border border-white/15 rounded-md px-4 py-3 text-white placeholder:text-zy-chrome/50 outline-none focus:border-zy-electric"
               />
             </div>
+
+            <label className="mt-6 flex items-start gap-3 text-sm text-zy-chrome cursor-pointer">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-zy-electric shrink-0"
+              />
+              <span>
+                I have read and agree to Zytrion&apos;s{" "}
+                
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zy-light-blue underline hover:text-white"
+                >
+                  Terms of Use
+                </a>
+                , including the GRID Restricted Use and Confidentiality section.
+              </span>
+            </label>
 
             {error && <p className="mt-4 text-red-400 text-sm">{error}</p>}
 

@@ -4,6 +4,7 @@ import { scoreAssessment, Answers } from "@/lib/assessment/scoring";
 import { INSTRUMENT_VERSION } from "@/lib/assessment/statements";
 import { getResendClient, EMAIL_FROM } from "@/lib/email/resend";
 import { tierResultNoticeEmail } from "@/lib/email/templates";
+import { TERMS_VERSION } from "@/lib/legal/terms";
 
 interface SubmitBody {
   contactName: string;
@@ -11,6 +12,7 @@ interface SubmitBody {
   contactEmail: string;
   contactPhone?: string;
   answers: Answers;
+  termsAccepted: boolean;
   referredByPartnerId?: string | null;
 }
 
@@ -25,6 +27,13 @@ export async function POST(req: NextRequest) {
   if (!body.contactName || !body.contactEmail || !body.answers) {
     return NextResponse.json(
       { error: "Name, email, and answers are required." },
+      { status: 400 }
+    );
+  }
+
+  if (body.termsAccepted !== true) {
+    return NextResponse.json(
+      { error: "You must agree to the Terms of Use to see your results." },
       { status: 400 }
     );
   }
@@ -93,6 +102,31 @@ export async function POST(req: NextRequest) {
       { error: "Assessment saved but pillar scores failed to save.", detail: pillarError.message },
       { status: 500 }
     );
+  }
+
+  // Terms of Use acceptance, logged as evidence, not a preference.
+  // accepted_at is server-assigned by the database default, never
+  // taken from the client. IP and user agent are read from request
+  // headers here, also server-side only. A failure here must never
+  // cost the person their result, the assessment itself is already
+  // durably saved above, so this is caught and logged, not thrown.
+  try {
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const ipAddress = forwardedFor ? forwardedFor.split(",")[0].trim() : null;
+    const userAgent = req.headers.get("user-agent");
+
+    const { error: termsError } = await supabase.from("terms_acceptances").insert({
+      assessment_id: assessmentId,
+      contact_email: body.contactEmail,
+      terms_version: TERMS_VERSION,
+      ip_address: ipAddress,
+      user_agent: userAgent,
+    });
+    if (termsError) {
+      console.error("Terms acceptance failed to log:", termsError.message);
+    }
+  } catch (err) {
+    console.error("Terms acceptance logging threw:", err);
   }
 
   // Tier result notice. Fires after everything is durably saved. A
