@@ -245,3 +245,81 @@ export function founderKitPurchasePingEmail(params: FounderKitPurchasePingParams
     html,
   };
 }
+
+export interface PhaseSubmittedForReviewParams {
+  contactName: string;
+  contactEmail: string;
+  kitTitle: string;
+  phaseTitle: string;
+  phaseNumber: number;
+  evidenceNote: string;
+  adminUrl: string;
+}
+
+/**
+ * Sent to the founder inbox the moment a client marks a phase
+ * complete with a real evidence note attached. Plain and functional,
+ * matches founderKitPurchasePingEmail's style, this one is for
+ * LaVonne, not a client.
+ */
+export function phaseSubmittedForReviewEmail(params: PhaseSubmittedForReviewParams): {
+  subject: string;
+  html: string;
+} {
+  const { contactName, contactEmail, kitTitle, phaseTitle, phaseNumber, evidenceNote, adminUrl } = params;
+  const html = `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:24px;font-family:Calibri,Arial,sans-serif;background-color:#ffffff;color:#000000;">
+  <p style="font-size:15px;">Phase ${phaseNumber} submitted for review, ${kitTitle}.</p>
+  <table role="presentation" cellpadding="4" cellspacing="0" style="font-size:14px;">
+    <tr><td><strong>Contact:</strong></td><td>${contactName} (${contactEmail})</td></tr>
+    <tr><td><strong>Phase:</strong></td><td>${phaseTitle}</td></tr>
+    <tr><td><strong>Evidence:</strong></td><td>${evidenceNote}</td></tr>
+  </table>
+  <p style="font-size:14px;margin-top:16px;"><a href="${adminUrl}">Open the review queue</a></p>
+</body>
+</html>`;
+  return {
+    subject: `Review Needed: ${kitTitle}, Phase ${phaseNumber}`,
+    html,
+  };
+}
+
+export interface PhaseReviewDecisionParams {
+  contactName: string;
+  kitTitle: string;
+  phaseTitle: string;
+  decision: "approved" | "needs_revision";
+  reviewerNotes: string;
+  portalUrl: string;
+}
+
+/**
+ * Sent to the client the moment their submitted evidence is reviewed,
+ * approved or sent back. Carries the full brand shell since this one
+ * is client-facing.
+ */
+export function phaseReviewDecisionEmail(params: PhaseReviewDecisionParams): {
+  subject: string;
+  html: string;
+} {
+  const { contactName, kitTitle, phaseTitle, decision, reviewerNotes, portalUrl } = params;
+  const isApproved = decision === "approved";
+  const body = `
+    <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
+    <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
+      ${isApproved
+        ? `Your submission for ${phaseTitle}, part of your ${kitTitle}, has been reviewed and approved.`
+        : `Your submission for ${phaseTitle}, part of your ${kitTitle}, needs another look before it can be approved.`
+      }
+    </p>
+    ${reviewerNotes ? `<p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">${reviewerNotes}</p>` : ""}
+    ${button("Go to Your Kit Portal", portalUrl)}
+  `;
+  return {
+    subject: isApproved
+      ? `Approved: ${phaseTitle}`
+      : `Revision Needed: ${phaseTitle}`,
+    html: emailShell(body),
+  };
+}

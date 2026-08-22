@@ -1,6 +1,8 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getResendClient, EMAIL_FROM, FOUNDER_EMAIL } from "@/lib/email/resend";
+import { phaseSubmittedForReviewEmail } from "@/lib/email/templates";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     const { data: phase } = await admin
       .from("kit_phases")
-      .select("phase_number, kit_id")
+      .select("phase_number, kit_id, title, kits ( title )")
       .eq("id", kitPhaseId)
       .single();
 
@@ -86,6 +88,39 @@ export async function POST(req: NextRequest) {
         if (enrollError) {
           console.error("Enrollment phase advance failed:", enrollError.message);
         }
+      }
+
+      // Submission alert to the founder inbox. A failure here must
+      // never affect the progress record or the enrollment advance
+      // above, both already succeeded, so this is caught and logged,
+      // not thrown.
+      try {
+        const { data: profile } = await admin
+          .from("profiles")
+          .select("contact_name, contact_email")
+          .eq("id", user.id)
+          .single();
+
+        const resend = getResendClient();
+        if (resend && profile?.contact_email) {
+          const notice = phaseSubmittedForReviewEmail({
+            contactName: profile.contact_name || "A client",
+            contactEmail: profile.contact_email,
+            kitTitle: (phase as any).kits?.title ?? "Kit",
+            phaseTitle: phase.title,
+            phaseNumber: phase.phase_number,
+            evidenceNote: evidenceNote.trim(),
+            adminUrl: "https://www.getzytrion.com/admin",
+          });
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: FOUNDER_EMAIL,
+            subject: notice.subject,
+            html: notice.html,
+          });
+        }
+      } catch (err) {
+        console.error("Phase submission alert failed to send:", err);
       }
     }
   }
