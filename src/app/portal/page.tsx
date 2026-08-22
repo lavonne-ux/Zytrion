@@ -1,6 +1,7 @@
 ﻿import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import BuyKitButton from "@/components/BuyKitButton";
 
 export default async function PortalPage() {
   const supabase = await createClient();
@@ -23,6 +24,13 @@ export default async function PortalPage() {
     .select("id, kit_id, status, current_phase, started_at")
     .eq("client_id", user.id);
 
+  const hasActiveKit = enrollments && enrollments.length > 0;
+
+  const { data: kits } = await supabase
+    .from("kits")
+    .select("id, title, price_standard, price_extended, duration_days, purpose_statement")
+    .order("tier_id");
+
   return (
     <main className="min-h-screen bg-zy-near-black text-white">
       <div className="max-w-2xl mx-auto px-6 py-16">
@@ -38,9 +46,9 @@ export default async function PortalPage() {
           <SignOutButton />
         </div>
 
-        {enrollments && enrollments.length > 0 ? (
+        {hasActiveKit ? (
           <div className="space-y-4">
-            {enrollments.map((e) => (
+            {enrollments!.map((e) => (
               <div key={e.id} className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
                 <p className="text-white font-medium">Kit enrollment</p>
                 <p className="text-sm text-zy-chrome mt-1">
@@ -50,12 +58,42 @@ export default async function PortalPage() {
             ))}
           </div>
         ) : (
-          <div className="border border-white/10 rounded-lg p-8 bg-white/[0.02] text-center">
-            <p className="text-white font-medium mb-2">No active kit yet</p>
-            <p className="text-sm text-zy-chrome leading-relaxed">
-              Once you purchase an Implementation Kit, it will appear here
-              along with your current phase and progress.
-            </p>
+          <div>
+            <div className="border border-white/10 rounded-lg p-8 bg-white/[0.02] text-center mb-10">
+              <p className="text-white font-medium mb-2">No active kit yet</p>
+              <p className="text-sm text-zy-chrome leading-relaxed">
+                Choose the kit that matches where your business is right
+                now. Once purchased, it appears here with your phase and
+                progress.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {kits?.map((kit) => (
+                <div key={kit.id} className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
+                  <h3 className="text-white font-semibold mb-1">{kit.title}</h3>
+                  {kit.purpose_statement && (
+                    <p className="text-sm text-zy-chrome mb-4">{kit.purpose_statement}</p>
+                  )}
+                  <div className="flex flex-wrap gap-3">
+                    {kit.price_standard && (
+                      <BuyKitButton
+                        kitId={kit.id}
+                        priceType="standard"
+                        label={`Enroll, $${(kit.price_standard / 100).toLocaleString()}`}
+                      />
+                    )}
+                    {kit.price_extended && (
+                      <BuyKitButton
+                        kitId={kit.id}
+                        priceType="extended"
+                        label={`Extended, $${(kit.price_extended / 100).toLocaleString()}`}
+                      />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

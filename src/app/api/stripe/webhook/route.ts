@@ -22,7 +22,42 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const assessmentId = session.metadata?.assessmentId;
+    const kitId = session.metadata?.kit_id;
+    const clientId = session.metadata?.client_id;
 
+    // Kit purchase: creates the enrollment. Separate flow from the
+    // Full Report path below, distinguished by kit_id/client_id
+    // being present instead of assessmentId.
+    if (kitId && clientId) {
+      const supabase = createAdminClient();
+      const kitTitle = session.metadata?.kit_title ?? "Implementation Kit";
+
+      const { error: enrollError } = await supabase.from("client_kit_enrollments").insert({
+        client_id: clientId,
+        kit_id: kitId,
+        status: "active",
+        current_phase: 1,
+      });
+      if (enrollError) {
+        console.error("Kit enrollment failed to save:", enrollError.message);
+      }
+
+      const { error: paymentError } = await supabase.from("payments").insert({
+        client_id: clientId,
+        product: kitTitle,
+        amount_cents: session.amount_total ?? 0,
+        status: "succeeded",
+        stripe_reference: session.id,
+      });
+      if (paymentError) {
+        console.error("Kit payment record failed to save:", paymentError.message);
+      }
+
+      return NextResponse.json({ received: true });
+    }
+
+    // Full Report purchase: existing flow, tied to an assessment
+    // rather than an authenticated client.
     if (assessmentId) {
       const supabase = createAdminClient();
       const { data: assessment } = await supabase
@@ -35,10 +70,6 @@ export async function POST(req: Request) {
         .select("id, contact_name, contact_business, contact_email, total_score, tiers ( name )")
         .single();
 
-      // Payment receipt to the client, plus a founder notification.
-      // Both ride the same confirmed event. A failure here must never
-      // affect payment recording, which already succeeded above, so
-      // this is caught and logged, not thrown.
       if (assessment) {
         try {
           const resend = getResendClient();
