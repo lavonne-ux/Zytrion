@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import StatStrip from "@/components/StatStrip";
 import FounderCount from "@/components/FounderCount";
+import FivePillars from "@/components/FivePillars";
 
 
 export default function Home() {
@@ -65,6 +66,8 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      <FivePillars />
     </main>
   );
 }
