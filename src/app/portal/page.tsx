@@ -5,6 +5,7 @@ import BuyKitButton from "@/components/BuyKitButton";
 import PhaseProgressButton from "@/components/PhaseProgressButton";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
+type ReviewStatus = "pending" | "approved" | "needs_revision";
 
 export default async function PortalPage() {
   const supabase = await createClient();
@@ -40,6 +41,8 @@ export default async function PortalPage() {
     evidence_produced: string | null;
     tools: { tool_name: string; portal_render_type: string; description: string | null } | null;
     status: PhaseStatus;
+    reviewStatus: ReviewStatus;
+    reviewerNotes: string | null;
   }> = [];
 
   if (activeEnrollment) {
@@ -53,16 +56,18 @@ export default async function PortalPage() {
 
     const { data: progress } = await supabase
       .from("client_phase_progress")
-      .select("kit_phase_id, status")
+      .select("kit_phase_id, status, review_status, reviewer_notes")
       .eq("client_id", user.id);
 
     const progressMap = Object.fromEntries(
-      (progress ?? []).map((p) => [p.kit_phase_id, p.status as PhaseStatus])
+      (progress ?? []).map((p) => [p.kit_phase_id, p])
     );
 
     phasesWithProgress = (phases ?? []).map((p: any) => ({
       ...p,
-      status: progressMap[p.id] ?? "not_started",
+      status: progressMap[p.id]?.status ?? "not_started",
+      reviewStatus: progressMap[p.id]?.review_status ?? "pending",
+      reviewerNotes: progressMap[p.id]?.reviewer_notes ?? null,
     }));
   }
 
@@ -127,7 +132,12 @@ export default async function PortalPage() {
                       )}
                     </div>
                   )}
-                  <PhaseProgressButton kitPhaseId={phase.id} status={phase.status} />
+                  <PhaseProgressButton
+                    kitPhaseId={phase.id}
+                    status={phase.status}
+                    reviewStatus={phase.reviewStatus}
+                    reviewerNotes={phase.reviewerNotes}
+                  />
                 </div>
               ))}
             </div>

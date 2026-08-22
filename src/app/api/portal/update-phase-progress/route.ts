@@ -36,6 +36,11 @@ export async function POST(req: NextRequest) {
         status === "complete"
           ? { note: evidenceNote.trim(), submitted_at: new Date().toISOString() }
           : null,
+      // Every real submission, first time or resubmission after a
+      // revision request, resets review status back to pending, so
+      // it always lands back in the queue rather than staying stuck
+      // on whatever decision was made last time.
+      review_status: status === "complete" ? "pending" : "pending",
     },
     { onConflict: "client_id,kit_phase_id" }
   );
@@ -47,10 +52,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Advancing the enrollment's overall phase is a separate concern from
-  // logging this one phase's status, and only matters when a phase is
-  // actually completed. Uses the admin client since the values written
-  // here are server-computed from real phase counts, not client input.
   if (status === "complete") {
     const admin = createAdminClient();
 
@@ -90,10 +91,6 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Submission alert to the founder inbox. A failure here must
-      // never affect the progress record or the enrollment advance
-      // above, both already succeeded, so this is caught and logged,
-      // not thrown.
       try {
         const { data: profile } = await admin
           .from("profiles")
