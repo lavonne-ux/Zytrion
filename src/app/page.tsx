@@ -1,5 +1,6 @@
 ﻿import Link from "next/link";
 import StatStrip from "@/components/StatStrip";
+import FounderCount from "@/components/FounderCount";
 
 
 export default function Home() {
@@ -40,6 +41,7 @@ export default function Home() {
           <p className="mt-3 text-sm text-zy-chrome/70">
             Free during our founding period. Takes about fifteen minutes.
           </p>
+          <FounderCount />
         </div>
       </section>
 
