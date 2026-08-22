@@ -12,11 +12,25 @@ export default function Home() {
         <div
           className="absolute inset-0"
           style={{
-            background:
-              "radial-gradient(ellipse 900px 600px at 50% 60%, rgba(125, 95, 217, 0.45) 0%, rgba(125, 95, 217, 0.15) 45%, transparent 75%), linear-gradient(180deg, #0A0F2E 0%, #080C1A 100%)",
+            background: "linear-gradient(180deg, #0A0F2E 0%, #080C1A 100%)",
           }}
         />
-        <div className="relative max-w-3xl mx-auto px-6 pt-20 pb-20 text-center">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 900px 600px at 50% 60%, rgba(125, 95, 217, 0.45) 0%, rgba(125, 95, 217, 0.15) 45%, transparent 75%)",
+          }}
+        />
+        <div className="relative max-w-3xl mx-auto px-6 pt-20 pb-20 text-center animate-fade-up">
           <div className="flex flex-col items-center gap-3 mb-12">
             <img
               src="/zytrion-orb-logo.png"
