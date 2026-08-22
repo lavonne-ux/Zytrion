@@ -176,3 +176,72 @@ export function founderPurchasePingEmail(params: FounderPurchasePingParams): {
     html,
   };
 }
+
+export interface KitPurchaseReceiptParams {
+  contactName: string;
+  kitTitle: string;
+  amountCents: number;
+  portalUrl: string;
+}
+
+/**
+ * Sent from the Stripe webhook on checkout.session.completed for a
+ * kit purchase. Confirms the charge and sends the client straight
+ * back into the portal where their new enrollment is now waiting.
+ */
+export function kitPurchaseReceiptEmail(params: KitPurchaseReceiptParams): {
+  subject: string;
+  html: string;
+} {
+  const { contactName, kitTitle, amountCents, portalUrl } = params;
+  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const body = `
+    <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
+    <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
+      Payment confirmed. You are enrolled in the ${kitTitle}, and it is waiting for you inside your Zytrion Kit Portal right now.
+    </p>
+    <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
+      Amount charged: $${amount}
+    </p>
+    ${button("Go to Your Kit Portal", portalUrl)}
+  `;
+  return {
+    subject: `You Are Enrolled: ${kitTitle}`,
+    html: emailShell(body),
+  };
+}
+
+export interface FounderKitPurchasePingParams {
+  businessName: string;
+  contactName: string;
+  contactEmail: string;
+  kitTitle: string;
+  amountCents: number;
+}
+
+/**
+ * Sent to the founder inbox on the same webhook event as the kit
+ * receipt. Plain and functional, matches founderPurchasePingEmail's
+ * style, this one is for LaVonne, not a client.
+ */
+export function founderKitPurchasePingEmail(params: FounderKitPurchasePingParams): {
+  subject: string;
+  html: string;
+} {
+  const { businessName, contactName, contactEmail, kitTitle, amountCents } = params;
+  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const html = `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:24px;font-family:Calibri,Arial,sans-serif;background-color:#ffffff;color:#000000;">
+  <p style="font-size:15px;">${kitTitle} purchased, $${amount}.</p>
+  <table role="presentation" cellpadding="4" cellspacing="0" style="font-size:14px;">
+    <tr><td><strong>Business:</strong></td><td>${businessName}</td></tr>
+    <tr><td><strong>Contact:</strong></td><td>${contactName} (${contactEmail})</td></tr>
+  </table>
+</body>
+</html>`;
+  return {
+    subject: `${kitTitle} Purchased, ${businessName}`,
+    html,
+  };
+}

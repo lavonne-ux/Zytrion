@@ -2,7 +2,12 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getResendClient, EMAIL_FROM, FOUNDER_EMAIL } from "@/lib/email/resend";
-import { paymentReceiptEmail, founderPurchasePingEmail } from "@/lib/email/templates";
+import {
+  paymentReceiptEmail,
+  founderPurchasePingEmail,
+  kitPurchaseReceiptEmail,
+  founderKitPurchasePingEmail,
+} from "@/lib/email/templates";
 
 export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -31,6 +36,7 @@ export async function POST(req: Request) {
     if (kitId && clientId) {
       const supabase = createAdminClient();
       const kitTitle = session.metadata?.kit_title ?? "Implementation Kit";
+      const amountCents = session.amount_total ?? 0;
 
       const { error: enrollError } = await supabase.from("client_kit_enrollments").insert({
         client_id: clientId,
@@ -45,12 +51,58 @@ export async function POST(req: Request) {
       const { error: paymentError } = await supabase.from("payments").insert({
         client_id: clientId,
         product: kitTitle,
-        amount_cents: session.amount_total ?? 0,
+        amount_cents: amountCents,
         status: "succeeded",
         stripe_reference: session.id,
       });
       if (paymentError) {
         console.error("Kit payment record failed to save:", paymentError.message);
+      }
+
+      // Receipt to the client, plus a founder notification. Both ride
+      // the same confirmed event. A failure here must never affect
+      // the enrollment or payment record above, which already
+      // succeeded, so this is caught and logged, not thrown.
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("contact_name, business_name, contact_email")
+          .eq("id", clientId)
+          .single();
+
+        const resend = getResendClient();
+        if (resend && profile?.contact_email) {
+          const portalUrl = "https://www.getzytrion.com/portal";
+
+          const receipt = kitPurchaseReceiptEmail({
+            contactName: profile.contact_name || "there",
+            kitTitle,
+            amountCents,
+            portalUrl,
+          });
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: profile.contact_email,
+            subject: receipt.subject,
+            html: receipt.html,
+          });
+
+          const ping = founderKitPurchasePingEmail({
+            businessName: profile.business_name || profile.contact_name || "Unknown",
+            contactName: profile.contact_name || "Unknown",
+            contactEmail: profile.contact_email,
+            kitTitle,
+            amountCents,
+          });
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: FOUNDER_EMAIL,
+            subject: ping.subject,
+            html: ping.html,
+          });
+        }
+      } catch (err) {
+        console.error("Kit purchase confirmation email(s) failed to send:", err);
       }
 
       return NextResponse.json({ received: true });
