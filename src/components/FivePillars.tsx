@@ -36,16 +36,16 @@ export default function FivePillars() {
       </p>
 
       <div
-        className="relative h-2 rounded-full overflow-hidden mb-12"
+        className="relative h-2 rounded-full overflow-hidden mb-12 pillar-bar-flow"
         style={{
-          background:
-            "linear-gradient(90deg, #0A0F2E 0%, #0B3DBF 25%, #1565FF 50%, #4AB3E8 75%, #C7CDD6 100%)",
+          backgroundImage:
+            "linear-gradient(90deg, #0A0F2E, #0B3DBF, #1565FF, #4AB3E8, #C7CDD6, #6D28D9, #0A0F2E)",
         }}
       >
         {[20, 40, 60, 80].map((pct) => (
           <div
             key={pct}
-            className="absolute top-0 bottom-0 w-px bg-zy-near-black/50"
+            className="absolute top-0 bottom-0 w-px bg-zy-near-black/50 z-10"
             style={{ left: `${pct}%` }}
           />
         ))}

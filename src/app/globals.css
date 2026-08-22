@@ -48,9 +48,24 @@ body {
     ringSpin 26s linear infinite;
 }
 
+@keyframes barFlow {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: -100% 0%;
+  }
+}
+
+.pillar-bar-flow {
+  background-size: 200% 100%;
+  animation: barFlow 12s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
-  .ring-gradient {
+  .ring-gradient,
+  .pillar-bar-flow {
     animation: none;
   }
   .ring-gradient {
