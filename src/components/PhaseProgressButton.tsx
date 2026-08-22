@@ -30,6 +30,7 @@ export default function PhaseProgressButton({
         return;
       }
       router.refresh();
+      setLoading(false);
     } catch {
       setError("Could not reach the server.");
       setLoading(false);
