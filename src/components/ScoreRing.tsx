@@ -3,7 +3,7 @@
   { color: "#1565FF", rotate: -18 },
   { color: "#4AB3E8", rotate: 54 },
   { color: "#C7CDD6", rotate: 126 },
-  { color: "#0B3DBF", rotate: 198 },
+  { color: "#7D5FD9", rotate: 198 },
 ];
 
 const RADIUS = 84;
