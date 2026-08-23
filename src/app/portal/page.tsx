@@ -76,6 +76,12 @@ export default async function PortalPage() {
     .select("id, title, price_standard, price_extended, duration_days, purpose_statement")
     .order("tier_id");
 
+  const { data: gridResults } = await supabase
+    .from("assessments")
+    .select("id, total_score, taken_at, full_report_paid_at, tiers ( name, tier_number )")
+    .eq("client_id", user.id)
+    .order("taken_at", { ascending: false });
+
   return (
     <main className="min-h-screen bg-zy-near-black text-white">
       <div className="max-w-2xl mx-auto px-6 py-16">
@@ -90,6 +96,43 @@ export default async function PortalPage() {
           </div>
           <SignOutButton />
         </div>
+
+        {gridResults && gridResults.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-xl font-semibold text-white mb-6">Your GRID Results</h2>
+            <div className="space-y-4">
+              {gridResults.map((result: any) => (
+                <a
+                  key={result.id}
+                  href={`/results/${result.id}`}
+                  className="block border border-white/10 rounded-lg p-6 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-semibold">
+                        {result.tiers?.name ?? "Tier pending"}
+                      </p>
+                      <p className="text-sm text-zy-chrome mt-1">
+                        {new Date(result.taken_at).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                        {result.full_report_paid_at ? ", Full Report unlocked" : ""}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-zy-electric">
+                        {result.total_score}
+                      </div>
+                      <div className="text-xs text-zy-chrome">/ 80</div>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {activeEnrollment ? (
           <div>
