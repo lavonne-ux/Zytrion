@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import BuyKitButton from "@/components/BuyKitButton";
 import PhaseProgressButton from "@/components/PhaseProgressButton";
+import SprintBookingWidget from "@/components/SprintBookingWidget";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
 type ReviewStatus = "pending" | "approved" | "needs_revision";
@@ -30,6 +31,7 @@ export default async function PortalPage() {
 
   const hasActiveKit = enrollments && enrollments.length > 0;
   const activeEnrollment = hasActiveKit ? enrollments![0] : null;
+  const isSprint = (activeEnrollment as any)?.kits?.kit_type === "sprint";
 
   let phasesWithProgress: Array<{
     id: string;
@@ -136,6 +138,20 @@ export default async function PortalPage() {
 
         {activeEnrollment ? (
           <div>
+            {isSprint && (
+              <div className="mb-8 space-y-6">
+                <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
+                  <p className="text-white font-semibold text-lg mb-2">Governance Stabilization Sprint</p>
+                  <p className="text-sm text-zy-chrome leading-relaxed">
+                    A structured, advisor-guided implementation engagement. Not a course, not a consultation.
+                    LaVonne works through your governance infrastructure with you, week by week, until it is
+                    built, documented, and provable. Your advisor directs the work, reviews what you produce,
+                    and holds the standard. You do the work.
+                  </p>
+                </div>
+                <SprintBookingWidget enrollmentId={activeEnrollment.id} />
+              </div>
+            )}
             <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02] mb-8">
               <p className="text-white font-semibold text-lg">
                 {(activeEnrollment as any).kits?.title ?? "Your Kit"}
