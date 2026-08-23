@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sendSprintBookingEmails } from "@/lib/email/sprintEmails";
 
 const WINDOWS = [
   { hourStart: 9, hourEnd: 12 },
@@ -65,6 +66,12 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: "Could not create the booking." }, { status: 500 });
   }
+
+  await sendSprintBookingEmails({
+    clientEmail: user.email ?? "",
+    clientName: (user.user_metadata as any)?.contact_name ?? "",
+    slotStart: slotDate.toISOString(),
+  }).catch(() => {});
 
   return NextResponse.json({ success: true });
 }
