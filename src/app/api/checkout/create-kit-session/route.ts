@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
 
   const checkoutParams: Stripe.Checkout.SessionCreateParams = {
     mode: "payment",
+    allow_promotion_codes: true,
     line_items: [{ price: priceId, quantity: 1 }],
     metadata: user
       ? { client_id: user.id, kit_id: kit.id, kit_title: kit.title }
