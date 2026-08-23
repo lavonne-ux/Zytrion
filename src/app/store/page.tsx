@@ -10,7 +10,7 @@ export default async function StorePage() {
 
   const { data: kits } = await supabase
     .from("kits")
-    .select("id, title, price_standard, price_extended, duration_days, purpose_statement")
+    .select("id, title, kit_type, price_standard, price_extended, duration_days, purpose_statement")
     .order("tier_id");
 
   return (
@@ -42,7 +42,7 @@ export default async function StorePage() {
                 <p className="text-sm text-zy-chrome mb-4">{kit.purpose_statement}</p>
               )}
               <div className="flex flex-wrap gap-3">
-                {user ? (
+                {user || kit.kit_type === "sprint" ? (
                   <>
                     {kit.price_standard && (
                       <BuyKitButton
