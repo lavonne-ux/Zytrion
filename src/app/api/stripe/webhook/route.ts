@@ -30,6 +30,99 @@ export async function POST(req: Request) {
     const kitId = session.metadata?.kit_id;
     const clientId = session.metadata?.client_id;
 
+    // Sprint (or any future kit) purchased with no existing account.
+    // Creates the account, profile (via the handle_new_user trigger),
+    // and enrollment automatically, then emails a magic link to set a
+    // password. Strictly additive: only fires when clientId is absent,
+    // never touches the existing kitId+clientId branch below it.
+    if (kitId && !clientId) {
+      const supabase = createAdminClient();
+      const email = session.customer_details?.email;
+      const kitTitle = session.metadata?.kit_title ?? "Sprint";
+      const amountCents = session.amount_total ?? 0;
+
+      if (!email) {
+        console.error("Kit purchase with no client_id completed with no email on the session.");
+        return NextResponse.json({ received: true });
+      }
+
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("contact_email", email)
+        .maybeSingle();
+
+      let newClientId = existingProfile?.id;
+
+      if (!newClientId) {
+        const { data: created, error: createError } = await supabase.auth.admin.createUser({
+          email,
+          email_confirm: true,
+          user_metadata: { contact_name: session.customer_details?.name ?? "" },
+        });
+        if (createError || !created.user) {
+          console.error("Sprint auto-signup failed to create user:", createError?.message);
+          return NextResponse.json({ received: true });
+        }
+        newClientId = created.user.id;
+      }
+
+      const { error: enrollError } = await supabase.from("client_kit_enrollments").insert({
+        client_id: newClientId,
+        kit_id: kitId,
+        status: "active",
+        current_phase: 1,
+      });
+      if (enrollError) {
+        console.error("Sprint enrollment failed to save:", enrollError.message);
+      }
+
+      const { error: paymentError } = await supabase.from("payments").insert({
+        client_id: newClientId,
+        product: kitTitle,
+        amount_cents: amountCents,
+        status: "succeeded",
+        stripe_reference: session.id,
+      });
+      if (paymentError) {
+        console.error("Sprint payment record failed to save:", paymentError.message);
+      }
+
+      try {
+        const { data: linkData } = await supabase.auth.admin.generateLink({
+          type: "magiclink",
+          email,
+        });
+        const resend = getResendClient();
+        if (resend && linkData?.properties?.action_link) {
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: email,
+            subject: "Your Sprint account is ready, set your password",
+            html: `<p>Your Governance Stabilization Sprint enrollment is confirmed.</p><p><a href="${linkData.properties.action_link}">Click here to set your password and access your portal</a>, where you will find your onboarding materials and can schedule your kickoff call.</p>`,
+          });
+
+          const ping = founderKitPurchasePingEmail({
+            businessName: session.customer_details?.name || "Unknown",
+            contactName: session.customer_details?.name || "Unknown",
+            contactEmail: email,
+            kitTitle,
+            amountCents,
+          });
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: FOUNDER_EMAIL,
+            subject: ping.subject,
+            html: ping.html,
+          });
+        }
+      } catch (err) {
+        console.error("Sprint auto-signup email(s) failed to send:", err);
+      }
+
+      return NextResponse.json({ received: true });
+    }
+
     // Kit purchase: creates the enrollment. Separate flow from the
     // Full Report path below, distinguished by kit_id/client_id
     // being present instead of assessmentId.
