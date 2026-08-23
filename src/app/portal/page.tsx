@@ -126,6 +126,7 @@ export default async function PortalPage() {
             <div className="px-6 pb-6 space-y-3">
               {gridResults.map((result: any) => (
                 
+                <a
                   key={result.id}
                   href={`/results/${result.id}`}
                   className="block border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
