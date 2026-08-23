@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+﻿import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -48,6 +48,7 @@ export async function POST(req: Request) {
 
   const session = await stripe.checkout.sessions.create({
     mode,
+    allow_promotion_codes: true,
     line_items: [{ price: selectedPriceId, quantity: 1 }],
     customer_email: assessment.contact_email || undefined,
     metadata: { assessmentId: assessment.id, priceId: selectedPriceId },
