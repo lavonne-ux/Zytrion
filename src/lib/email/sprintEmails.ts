@@ -6,8 +6,10 @@ export async function sendSprintBookingEmails(params: {
   clientEmail: string;
   clientName: string;
   slotStart: string;
+  bookingLabel?: string;
 }) {
-  const { clientEmail, clientName, slotStart } = params;
+  const { clientEmail, clientName, slotStart, bookingLabel } = params;
+  const label = bookingLabel || "call";
   const when = new Date(slotStart).toLocaleString("en-US", {
     weekday: "long",
     month: "long",
@@ -20,14 +22,14 @@ export async function sendSprintBookingEmails(params: {
   await resend.emails.send({
     from: "Zytrion Infrastructure Group <info@getzytrion.com>",
     to: clientEmail,
-    subject: "Your Sprint kickoff call is confirmed",
-    text: `${clientName || "Hi"},\n\nYour Governance Stabilization Sprint kickoff call is confirmed for ${when}.\n\nZytrion Infrastructure Group\ngetzytrion.com`,
+    subject: `Your ${label} is confirmed`,
+    text: `${clientName || "Hi"},\n\nYour ${label} is confirmed for ${when}.\n\nZytrion Infrastructure Group\ngetzytrion.com`,
   });
 
   await resend.emails.send({
     from: "Zytrion Infrastructure Group <info@getzytrion.com>",
     to: "info@getzytrion.com",
-    subject: "New Sprint kickoff booked",
-    text: `${clientName || "A client"} (${clientEmail}) booked a Sprint kickoff call for ${when}.`,
+    subject: `New booking: ${label}`,
+    text: `${clientName || "A client"} (${clientEmail}) booked a ${label} for ${when}.`,
   });
 }

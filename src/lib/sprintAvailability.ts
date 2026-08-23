@@ -4,7 +4,16 @@ export const WINDOWS = [
   { hourStart: 14, hourEnd: 16 },
 ];
 export const DAYS_OF_WEEK = [2, 4];
-export const SLOT_MINUTES = 30;
+export const SLOT_GRID_MINUTES = 30;
+
+// Every bookable thing is 30 minutes, client-facing. A 15-minute buffer
+// is held internally after each one, invisible to the client, so
+// LaVonne never goes straight from one call into the next.
+export const BOOKING_DURATIONS: Record<string, number> = {
+  sprint: 30,
+  consultation: 30,
+};
+export const BUFFER_MINUTES = 15;
 
 function getTimezoneOffsetMinutes(date: Date, timeZone: string): number {
   const dtf = new Intl.DateTimeFormat("en-US", {
@@ -45,7 +54,24 @@ export function utcToEasternParts(date: Date): { dayOfWeek: number; hour: number
   return { dayOfWeek: weekdayMap[map.weekday], hour, minute: Number(map.minute) };
 }
 
-export function generateCandidateSlots(): Date[] {
+// A candidate is valid only if the client-visible booking itself, not
+// the buffer, fits inside one continuous window.
+export function isValidEasternSlot(date: Date, durationMinutes: number): boolean {
+  const { dayOfWeek, hour, minute } = utcToEasternParts(date);
+  if (!DAYS_OF_WEEK.includes(dayOfWeek)) return false;
+  if (minute !== 0 && minute !== 30) return false;
+
+  const startTotalMinutes = hour * 60 + minute;
+  const endTotalMinutes = startTotalMinutes + durationMinutes;
+
+  return WINDOWS.some((w) => {
+    const windowStart = w.hourStart * 60;
+    const windowEnd = w.hourEnd * 60;
+    return startTotalMinutes >= windowStart && endTotalMinutes <= windowEnd;
+  });
+}
+
+export function generateCandidateSlots(durationMinutes: number): Date[] {
   const slots: Date[] = [];
   const now = new Date();
 
@@ -67,9 +93,11 @@ export function generateCandidateSlots(): Date[] {
 
     for (const w of WINDOWS) {
       for (let h = w.hourStart; h < w.hourEnd; h++) {
-        for (let m = 0; m < 60; m += SLOT_MINUTES) {
+        for (let m = 0; m < 60; m += SLOT_GRID_MINUTES) {
           const slot = easternWallTimeToUTC(year, month, date, h, m);
-          if (slot > now) slots.push(slot);
+          if (slot <= now) continue;
+          if (!isValidEasternSlot(slot, durationMinutes)) continue;
+          slots.push(slot);
         }
       }
     }
@@ -77,9 +105,15 @@ export function generateCandidateSlots(): Date[] {
   return slots.sort((a, b) => a.getTime() - b.getTime());
 }
 
-export function isValidEasternSlot(date: Date): boolean {
-  const { dayOfWeek, hour, minute } = utcToEasternParts(date);
-  if (!DAYS_OF_WEEK.includes(dayOfWeek)) return false;
-  if (minute !== 0 && minute !== 30) return false;
-  return WINDOWS.some((w) => hour >= w.hourStart && hour < w.hourEnd);
+// Two bookings conflict if one starts before the other's end PLUS the
+// buffer. The buffer only ever applies to existing, already-confirmed
+// bookings, extending how long they block the calendar, it never
+// changes what the client sees as the length of their own booking.
+export function rangesOverlapWithBuffer(
+  candidateStart: Date, candidateEnd: Date,
+  existingStart: Date, existingEnd: Date, bufferMinutes: number
+): boolean {
+  const bufferedExistingEnd = new Date(existingEnd.getTime() + bufferMinutes * 60000);
+  const bufferedExistingStart = new Date(existingStart.getTime() - bufferMinutes * 60000);
+  return candidateStart < bufferedExistingEnd && bufferedExistingStart < candidateEnd;
 }

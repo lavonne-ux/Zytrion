@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import BuyKitButton from "@/components/BuyKitButton";
 import PhaseProgressButton from "@/components/PhaseProgressButton";
-import SprintBookingWidget from "@/components/SprintBookingWidget";
+import BookingWidget from "@/components/BookingWidget";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
 type ReviewStatus = "pending" | "approved" | "needs_revision";
@@ -21,6 +21,8 @@ type PhaseWithProgress = {
   reviewStatus: ReviewStatus;
   reviewerNotes: string | null;
 };
+
+const BOOKABLE_KIT_TYPES = ["sprint", "consultation"];
 
 export default async function PortalPage() {
   const supabase = await createClient();
@@ -44,9 +46,6 @@ export default async function PortalPage() {
     .eq("client_id", user.id)
     .order("taken_at", { ascending: false });
 
-  // All active enrollments, newest first. Previously this only ever read
-  // enrollments[0], which silently hid every kit but the first one
-  // returned whenever a client had more than one, not just Sprint.
   const { data: enrollments } = await supabase
     .from("client_kit_enrollments")
     .select("id, kit_id, status, current_phase, started_at, kits ( title, kit_type )")
@@ -58,9 +57,10 @@ export default async function PortalPage() {
 
   const enrollmentsWithPhases = await Promise.all(
     allEnrollments.map(async (enrollment: any) => {
-      const isSprint = enrollment.kits?.kit_type === "sprint";
-      if (isSprint) {
-        return { enrollment, isSprint: true, phases: [] as PhaseWithProgress[] };
+      const kitType = enrollment.kits?.kit_type;
+      const isBookable = BOOKABLE_KIT_TYPES.includes(kitType);
+      if (isBookable) {
+        return { enrollment, isBookable: true, kitType, phases: [] as PhaseWithProgress[] };
       }
 
       const { data: phases } = await supabase
@@ -87,7 +87,7 @@ export default async function PortalPage() {
         reviewerNotes: progressMap[p.id]?.reviewer_notes ?? null,
       }));
 
-      return { enrollment, isSprint: false, phases: phasesWithProgress };
+      return { enrollment, isBookable: false, kitType, phases: phasesWithProgress };
     })
   );
 
@@ -126,7 +126,6 @@ export default async function PortalPage() {
             <div className="px-6 pb-6 space-y-3">
               {gridResults.map((result: any) => (
                 
-                <a
                   key={result.id}
                   href={`/results/${result.id}`}
                   className="block border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
@@ -162,7 +161,7 @@ export default async function PortalPage() {
                 ({enrollmentsWithPhases.length})
               </span>
             </h2>
-            {enrollmentsWithPhases.map(({ enrollment, isSprint, phases }, idx) => (
+            {enrollmentsWithPhases.map(({ enrollment, isBookable, kitType, phases }, idx) => (
               <details
                 key={enrollment.id}
                 open={idx === 0}
@@ -175,7 +174,7 @@ export default async function PortalPage() {
                     </p>
                     <p className="text-sm text-zy-chrome mt-1">
                       Status: {enrollment.status}
-                      {!isSprint ? `, currently on phase ${enrollment.current_phase}` : ""}
+                      {!isBookable ? `, currently on phase ${enrollment.current_phase}` : ""}
                     </p>
                   </div>
                   <span className="text-zy-chrome text-sm group-open:hidden">Expand</span>
@@ -183,21 +182,23 @@ export default async function PortalPage() {
                 </summary>
 
                 <div className="px-6 pb-6">
-                  {isSprint ? (
+                  {isBookable ? (
                     <div className="space-y-6">
                       <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
                         <p className="text-white font-semibold text-lg mb-2">
-                          Governance Stabilization Sprint
+                          {(enrollment as any).kits?.title}
                         </p>
                         <p className="text-sm text-zy-chrome leading-relaxed">
-                          A structured, advisor-guided implementation engagement. Not a course, not
-                          a consultation. LaVonne works through your governance infrastructure with
-                          you, week by week, until it is built, documented, and provable. Your
-                          advisor directs the work, reviews what you produce, and holds the
-                          standard. You do the work.
+                          {kitType === "sprint"
+                            ? "A structured, advisor-guided implementation engagement. Not a course, not a consultation. LaVonne works through your governance infrastructure with you, week by week, until it is built, documented, and provable. Your advisor directs the work, reviews what you produce, and holds the standard. You do the work."
+                            : "A single 30-minute session with LaVonne, direct guidance on a specific governance question."}
                         </p>
                       </div>
-                      <SprintBookingWidget enrollmentId={enrollment.id} />
+                      <BookingWidget
+                        enrollmentId={enrollment.id}
+                        kind={kitType as "sprint" | "consultation"}
+                        label={kitType === "sprint" ? "Kickoff Call" : "Consultation"}
+                      />
                     </div>
                   ) : (
                     <div className="space-y-4">

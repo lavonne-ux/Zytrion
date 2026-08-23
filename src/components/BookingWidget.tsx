@@ -1,7 +1,15 @@
 ﻿"use client";
 import { useState, useEffect } from "react";
 
-export default function SprintBookingWidget({ enrollmentId }: { enrollmentId: string }) {
+export default function BookingWidget({
+  enrollmentId,
+  kind,
+  label,
+}: {
+  enrollmentId: string;
+  kind: "sprint" | "consultation";
+  label: string;
+}) {
   const [slots, setSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
@@ -9,18 +17,18 @@ export default function SprintBookingWidget({ enrollmentId }: { enrollmentId: st
   const [confirmed, setConfirmed] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/sprint/available-slots")
+    fetch(`/api/booking/available-slots?kind=${kind}`)
       .then((res) => res.json())
       .then((data) => setSlots(data.slots ?? []))
       .catch(() => setError("Could not load available times."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [kind]);
 
   async function bookSlot(slot: string) {
     setBooking(true);
     setError(null);
     try {
-      const res = await fetch("/api/sprint/create-booking", {
+      const res = await fetch("/api/booking/create-booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enrollmentId, slotStart: slot }),
@@ -41,7 +49,7 @@ export default function SprintBookingWidget({ enrollmentId }: { enrollmentId: st
   if (confirmed) {
     return (
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
-        <p className="text-white font-medium">Kickoff call confirmed.</p>
+        <p className="text-white font-medium">{label} confirmed.</p>
         <p className="text-sm text-zy-chrome mt-1">
           {new Date(confirmed).toLocaleString(undefined, {
             weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit",
@@ -54,7 +62,7 @@ export default function SprintBookingWidget({ enrollmentId }: { enrollmentId: st
 
   return (
     <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
-      <p className="text-white font-semibold mb-1">Schedule Your Kickoff Call</p>
+      <p className="text-white font-semibold mb-1">Schedule Your {label}</p>
       <p className="text-sm text-zy-chrome mb-4">Tuesdays and Thursdays, 30 minutes.</p>
       {loading && <p className="text-sm text-zy-chrome">Loading available times...</p>}
       {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
