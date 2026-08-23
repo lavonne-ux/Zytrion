@@ -3,11 +3,13 @@ import StatStrip from "@/components/StatStrip";
 import FounderCount from "@/components/FounderCount";
 import FivePillars from "@/components/FivePillars";
 import ScoreRing from "@/components/ScoreRing";
+import FoundingBanner from "@/components/FoundingBanner";
 
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-zy-near-black text-white">
+      <FoundingBanner />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div

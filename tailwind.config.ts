@@ -18,6 +18,15 @@ const config: Config = {
       fontFamily: {
         sans: ["Calibri", "Segoe UI", "system-ui", "sans-serif"],
       },
+      keyframes: {
+        "pulse-once": {
+          "0%, 100%": { opacity: "1", transform: "scale(1)" },
+          "50%": { opacity: "0.4", transform: "scale(1.4)" },
+        },
+      },
+      animation: {
+        "pulse-once": "pulse-once 1s ease-in-out 1",
+      },
     },
   },
   plugins: [],
