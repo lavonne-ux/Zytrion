@@ -10,6 +10,8 @@ import ToolForm from "@/components/ToolForm";
 import ToolWorksheet from "@/components/ToolWorksheet";
 import ToolUpload from "@/components/ToolUpload";
 import MaintenanceDashboard from "@/components/MaintenanceDashboard";
+import QuarterlyGovernanceReview from "@/components/QuarterlyGovernanceReview";
+import AnnualGovernanceCalendar from "@/components/AnnualGovernanceCalendar";
 import ToolChecklist from "@/components/ToolChecklist";
 import ToolLog from "@/components/ToolLog";
 import ActionItemCheckbox from "@/components/ActionItemCheckbox";
@@ -269,7 +271,11 @@ export default async function PortalPage() {
                       />
                     </div>
                   ) : phases.length === 0 ? (
-                    <MaintenanceDashboard />
+                    <div className="space-y-6">
+                      <MaintenanceDashboard />
+                      <QuarterlyGovernanceReview />
+                      <AnnualGovernanceCalendar />
+                    </div>
                   ) : (
                     <div className="space-y-4">
                       {phases.map((phase) => (
