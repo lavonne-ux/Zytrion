@@ -1,4 +1,6 @@
 ﻿import { redirect } from "next/navigation";
+import { getAdminStatus } from "@/lib/auth/admin";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import BuyKitButton from "@/components/BuyKitButton";
@@ -37,6 +39,8 @@ export default async function PortalPage() {
   if (!user) {
     redirect("/login");
   }
+
+  const { isAdmin } = await getAdminStatus();
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -122,7 +126,14 @@ export default async function PortalPage() {
               Welcome, {profile?.contact_name || user.email}
             </h1>
           </div>
-          <SignOutButton />
+          <div className="flex items-center gap-4">
+            {isAdmin && (
+              <Link href="/admin" className="text-sm text-zy-light-blue underline hover:text-white">
+                Admin
+              </Link>
+            )}
+            <SignOutButton />
+          </div>
         </div>
 
         {openActionItems.length > 0 && (
