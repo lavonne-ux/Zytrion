@@ -4,6 +4,7 @@ import SignOutButton from "@/components/SignOutButton";
 import BuyKitButton from "@/components/BuyKitButton";
 import PhaseProgressButton from "@/components/PhaseProgressButton";
 import BookingWidget from "@/components/BookingWidget";
+import ActionItemCheckbox from "@/components/ActionItemCheckbox";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
 type ReviewStatus = "pending" | "approved" | "needs_revision";
@@ -45,6 +46,16 @@ export default async function PortalPage() {
     .select("id, total_score, taken_at, full_report_paid_at, tiers ( name, tier_number )")
     .eq("client_id", user.id)
     .order("taken_at", { ascending: false });
+
+  const { data: actionItems } = await supabase
+    .from("action_items")
+    .select("id, description, status, created_at")
+    .eq("client_id", user.id)
+    .order("status", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  const openActionItems = (actionItems ?? []).filter((a) => a.status !== "complete");
+  const completedActionItems = (actionItems ?? []).filter((a) => a.status === "complete");
 
   const { data: enrollments } = await supabase
     .from("client_kit_enrollments")
@@ -111,6 +122,45 @@ export default async function PortalPage() {
           <SignOutButton />
         </div>
 
+        {openActionItems.length > 0 && (
+          <div className="mb-8 border border-zy-electric/30 rounded-lg bg-zy-electric/5 px-6 py-5">
+            <h2 className="text-lg font-semibold text-white mb-1">
+              Your Action Items
+              <span className="ml-3 text-sm font-normal text-zy-chrome">
+                ({openActionItems.length} open)
+              </span>
+            </h2>
+            <div className="mt-3 divide-y divide-white/5">
+              {openActionItems.map((item: any) => (
+                <ActionItemCheckbox
+                  key={item.id}
+                  actionItemId={item.id}
+                  description={item.description}
+                  initialStatus={item.status}
+                />
+              ))}
+            </div>
+            {completedActionItems.length > 0 && (
+              <details className="mt-4 group">
+                <summary className="cursor-pointer list-none text-xs text-zy-light-blue underline">
+                  <span className="group-open:hidden">Show {completedActionItems.length} completed</span>
+                  <span className="hidden group-open:inline">Hide completed</span>
+                </summary>
+                <div className="mt-2 divide-y divide-white/5 border-t border-white/10 pt-2">
+                  {completedActionItems.map((item: any) => (
+                    <ActionItemCheckbox
+                      key={item.id}
+                      actionItemId={item.id}
+                      description={item.description}
+                      initialStatus={item.status}
+                    />
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
+
         {gridResults && gridResults.length > 0 && (
           <details className="mb-8 border border-white/10 rounded-lg bg-white/[0.02] group">
             <summary className="cursor-pointer list-none px-6 py-4 flex items-center justify-between">
@@ -126,7 +176,6 @@ export default async function PortalPage() {
             <div className="px-6 pb-6 space-y-3">
               {gridResults.map((result: any) => (
                 
-                <a
                   key={result.id}
                   href={`/results/${result.id}`}
                   className="block border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
