@@ -291,7 +291,14 @@ export default function ToolForm({
     return (
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} submitted.</p>
-        <p className="text-sm text-zy-chrome mt-1">Your advisor will review it shortly.</p>
+        <p className="text-sm text-zy-chrome mt-1 mb-4">Your record has been saved.</p>
+        
+          <a
+          href={`/api/tools/generate-pdf?kitPhaseId=${kitPhaseId}`}
+          className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-2.5 rounded-md text-sm"
+        >
+          Download PDF
+        </a>
       </div>
     );
   }
