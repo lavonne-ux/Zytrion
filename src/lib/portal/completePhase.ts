@@ -11,8 +11,9 @@ export async function completePhase(params: {
   userId: string;
   kitPhaseId: string;
   evidenceNote: string;
+  reviewStatus?: "pending" | "approved";
 }) {
-  const { userId, kitPhaseId, evidenceNote } = params;
+  const { userId, kitPhaseId, evidenceNote, reviewStatus = "pending" } = params;
   const supabase = await createClient();
 
   const { error: progressError } = await supabase.from("client_phase_progress").upsert(
@@ -22,7 +23,7 @@ export async function completePhase(params: {
       status: "complete",
       completed_at: new Date().toISOString(),
       evidence_artifact_ref: { note: evidenceNote.trim(), submitted_at: new Date().toISOString() },
-      review_status: "pending",
+      review_status: reviewStatus,
     },
     { onConflict: "client_id,kit_phase_id" }
   );

@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function ToolUpload({
@@ -17,10 +17,29 @@ export default function ToolUpload({
   const [files, setFiles] = useState<Record<string, { path: string; fileName: string }[]>>(
     Object.fromEntries(sections.map((s) => [s, []]))
   );
+  const [loadingExisting, setLoadingExisting] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/tools/get-submission?kitPhaseId=${kitPhaseId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.submittedData?.sections) {
+          setFiles((f) => ({ ...f, ...data.submittedData.sections }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingExisting(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [kitPhaseId]);
 
   const allSectionsFilled = sections.every((s) => (files[s]?.length ?? 0) > 0);
 
@@ -67,6 +86,7 @@ export default function ToolUpload({
           kitPhaseId,
           toolName,
           submittedData: { sections: files, retrieval_test_passed: true },
+          createSectionReviews: true,
         }),
       });
       const data = await res.json();
@@ -89,6 +109,14 @@ export default function ToolUpload({
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} submitted.</p>
         <p className="text-sm text-zy-chrome mt-1">All nine sections confirmed complete. Your advisor will review it shortly.</p>
+      </div>
+    );
+  }
+
+  if (loadingExisting) {
+    return (
+      <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
+        <p className="text-sm text-zy-chrome">Loading...</p>
       </div>
     );
   }

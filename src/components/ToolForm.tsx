@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ToolField, localToday, initialValuesFor } from "@/lib/tools/toolFieldTypes";
 
@@ -18,9 +18,28 @@ export default function ToolForm({
   const today = localToday();
 
   const [values, setValues] = useState<Record<string, any>>(() => initialValuesFor(fieldSchema));
+  const [loadingExisting, setLoadingExisting] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/tools/get-submission?kitPhaseId=${kitPhaseId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.submittedData) {
+          setValues((v) => ({ ...v, ...data.submittedData }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingExisting(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [kitPhaseId]);
 
   function setField(name: string, val: any) {
     setValues((v) => ({ ...v, [name]: val }));
@@ -50,7 +69,7 @@ export default function ToolForm({
       const res = await fetch("/api/tools/submit-form", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toolId, kitPhaseId, toolName, submittedData: values }),
+        body: JSON.stringify({ toolId, kitPhaseId, toolName, submittedData: values, autoApprove: true }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -81,6 +100,7 @@ export default function ToolForm({
         return (
           <div key={field.name} className="mb-4">
             <label className="block text-sm text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/60 mb-1">{field.hint}</p>}
             <input
               type="text"
               value={values[field.name] ?? ""}
@@ -94,6 +114,7 @@ export default function ToolForm({
         return (
           <div key={field.name} className="mb-4">
             <label className="block text-sm text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/60 mb-1">{field.hint}</p>}
             <textarea
               value={values[field.name] ?? ""}
               onChange={(e) => setField(field.name, e.target.value)}
@@ -107,6 +128,7 @@ export default function ToolForm({
         return (
           <div key={field.name} className="mb-4">
             <label className="block text-sm text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/60 mb-1">{field.hint}</p>}
             <input
               type="date"
               value={values[field.name] ?? ""}
@@ -121,6 +143,7 @@ export default function ToolForm({
         return (
           <div key={field.name} className="mb-4">
             <label className="block text-sm text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/60 mb-1">{field.hint}</p>}
             <input
               type="number"
               value={values[field.name] ?? ""}
@@ -134,6 +157,7 @@ export default function ToolForm({
         return (
           <div key={field.name} className="mb-4">
             <label className="block text-sm text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/60 mb-1">{field.hint}</p>}
             <div className="flex items-center">
               <span className="text-zy-chrome mr-2">$</span>
               <input
@@ -149,14 +173,17 @@ export default function ToolForm({
 
       case "boolean":
         return (
-          <label key={field.name} className="flex items-center gap-2 text-sm text-zy-chrome mb-4">
-            <input
-              type="checkbox"
-              checked={Boolean(values[field.name])}
-              onChange={(e) => setField(field.name, e.target.checked)}
-            />
-            {label}
-          </label>
+          <div key={field.name} className="mb-4">
+            <label className="flex items-center gap-2 text-sm text-zy-chrome">
+              <input
+                type="checkbox"
+                checked={Boolean(values[field.name])}
+                onChange={(e) => setField(field.name, e.target.checked)}
+              />
+              {label}
+            </label>
+            {field.hint && <p className="text-xs text-zy-chrome/60 mt-1 ml-6">{field.hint}</p>}
+          </div>
         );
 
       case "select":
@@ -164,6 +191,7 @@ export default function ToolForm({
         return (
           <div key={field.name} className="mb-4">
             <label className="block text-sm text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/60 mb-1">{field.hint}</p>}
             <select
               value={values[field.name] ?? ""}
               onChange={(e) => setField(field.name, e.target.value)}
@@ -212,6 +240,7 @@ export default function ToolForm({
         return (
           <div key={field.name} className="mb-4">
             <label className="block text-sm text-zy-chrome mb-2">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/60 mb-2">{field.hint}</p>}
             <div className="space-y-2">
               {(values[field.name] ?? []).map((row: Record<string, string>, idx: number) => (
                 <div key={idx} className="flex gap-2 items-center">
@@ -263,6 +292,14 @@ export default function ToolForm({
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} submitted.</p>
         <p className="text-sm text-zy-chrome mt-1">Your advisor will review it shortly.</p>
+      </div>
+    );
+  }
+
+  if (loadingExisting) {
+    return (
+      <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
+        <p className="text-sm text-zy-chrome">Loading...</p>
       </div>
     );
   }

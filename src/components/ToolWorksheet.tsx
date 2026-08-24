@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ToolField, localToday } from "@/lib/tools/toolFieldTypes";
 
@@ -21,9 +21,28 @@ export default function ToolWorksheet({
 
   const [entries, setEntries] = useState<Record<string, any>[]>([]);
   const [current, setCurrent] = useState<Record<string, any>>(emptyEntry());
+  const [loadingExisting, setLoadingExisting] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/tools/get-submission?kitPhaseId=${kitPhaseId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.submittedData?.entries) {
+          setEntries(data.submittedData.entries);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingExisting(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [kitPhaseId]);
 
   function setCurrentField(name: string, val: any) {
     setCurrent((c) => ({ ...c, [name]: val }));
@@ -56,7 +75,7 @@ export default function ToolWorksheet({
       const res = await fetch("/api/tools/submit-form", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toolId, kitPhaseId, toolName, submittedData: { entries: toSave } }),
+        body: JSON.stringify({ toolId, kitPhaseId, toolName, submittedData: { entries: toSave }, autoApprove: true }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -82,6 +101,7 @@ export default function ToolWorksheet({
         return (
           <div key={field.name} className="mb-3">
             <label className="block text-xs text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/50 mb-1">{field.hint}</p>}
             <textarea
               value={current[field.name] ?? ""}
               onChange={(e) => setCurrentField(field.name, e.target.value)}
@@ -94,6 +114,7 @@ export default function ToolWorksheet({
         return (
           <div key={field.name} className="mb-3">
             <label className="block text-xs text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/50 mb-1">{field.hint}</p>}
             <input
               type="date"
               value={current[field.name] ?? ""}
@@ -107,6 +128,7 @@ export default function ToolWorksheet({
         return (
           <div key={field.name} className="mb-3">
             <label className="block text-xs text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/50 mb-1">{field.hint}</p>}
             <input
               type="number"
               value={current[field.name] ?? ""}
@@ -119,6 +141,7 @@ export default function ToolWorksheet({
         return (
           <div key={field.name} className="mb-3">
             <label className="block text-xs text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/50 mb-1">{field.hint}</p>}
             <select
               value={current[field.name] ?? ""}
               onChange={(e) => setCurrentField(field.name, e.target.value)}
@@ -135,6 +158,7 @@ export default function ToolWorksheet({
         return (
           <div key={field.name} className="mb-3">
             <label className="block text-xs text-zy-chrome mb-1">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/50 mb-1">{field.hint}</p>}
             <input
               type="text"
               value={current[field.name] ?? ""}
@@ -151,6 +175,14 @@ export default function ToolWorksheet({
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} saved.</p>
         <p className="text-sm text-zy-chrome mt-1">Your advisor will review it shortly.</p>
+      </div>
+    );
+  }
+
+  if (loadingExisting) {
+    return (
+      <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
+        <p className="text-sm text-zy-chrome">Loading...</p>
       </div>
     );
   }

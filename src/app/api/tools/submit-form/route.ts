@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const { toolId, kitPhaseId, toolName, submittedData } = await req.json();
+  const { toolId, kitPhaseId, toolName, submittedData, autoApprove, createSectionReviews } = await req.json();
   if (!toolId || !kitPhaseId || !submittedData) {
     return NextResponse.json({ error: "Missing toolId, kitPhaseId, or submittedData." }, { status: 400 });
   }
@@ -42,10 +42,43 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Governance Binder and any future multi-document upload tool: each
+  // section gets its own review row, not one bulk phase-level decision,
+  // so a problem in one section never forces a redo of the other eight.
+  if (createSectionReviews && submittedData?.sections) {
+    const sectionEntries = Object.entries(submittedData.sections) as [
+      string,
+      { path: string; fileName: string }[]
+    ][];
+    for (const [sectionName, files] of sectionEntries) {
+      if (!files || files.length === 0) continue;
+      const latestFile = files[files.length - 1];
+      const { error: reviewError } = await supabase.from("client_document_reviews").upsert(
+        {
+          client_id: user.id,
+          kit_phase_id: kitPhaseId,
+          section_name: sectionName,
+          file_path: latestFile.path,
+          file_name: latestFile.fileName,
+          review_status: "pending",
+          reviewed_at: null,
+        },
+        { onConflict: "client_id,kit_phase_id,section_name" }
+      );
+      if (reviewError) {
+        console.error(`Document review row failed for section ${sectionName}:`, reviewError.message);
+      }
+    }
+  }
+
+  // Forms and worksheets: completeness is the gate, not a human review.
+  // Governance Binder: phase-level status still tracks as pending until
+  // every individual section above is approved.
   const result = await completePhase({
     userId: user.id,
     kitPhaseId,
     evidenceNote: summarize(toolName ?? "Tool", submittedData),
+    reviewStatus: autoApprove ? "approved" : "pending",
   });
 
   if (!result.success) {

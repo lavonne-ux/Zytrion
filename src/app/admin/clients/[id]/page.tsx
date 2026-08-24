@@ -4,6 +4,7 @@ import { getAdminStatus } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import AdminNoteForm from "@/components/AdminNoteForm";
 import AdminActionItemRow from "@/components/AdminActionItemRow";
+import AdminDocumentReviewRow from "@/components/AdminDocumentReviewRow";
 
 export default async function AdminClientPage(props: { params: Promise<{ id: string }> }) {
   const { user, isAdmin } = await getAdminStatus();
@@ -20,6 +21,13 @@ export default async function AdminClientPage(props: { params: Promise<{ id: str
     .single();
 
   if (!client) return notFound();
+
+  const { data: documentReviews } = await admin
+    .from("client_document_reviews")
+    .select("id, section_name, file_name, review_status")
+    .eq("client_id", id)
+    .eq("review_status", "pending")
+    .order("section_name");
 
   const { data: bookings } = await admin
     .from("sprint_bookings")
@@ -54,6 +62,27 @@ export default async function AdminClientPage(props: { params: Promise<{ id: str
         <p className="text-sm text-zy-chrome mb-8">{client.contact_email}</p>
 
         <AdminNoteForm clientId={client.id} />
+
+        {documentReviews && documentReviews.length > 0 && (
+          <>
+            <h2 className="text-lg font-semibold mb-4">
+              Document Reviews
+              <span className="ml-2 text-sm font-normal text-zy-chrome">
+                ({documentReviews.length} pending)
+              </span>
+            </h2>
+            <div className="space-y-2 mb-8">
+              {documentReviews.map((review) => (
+                <AdminDocumentReviewRow
+                  key={review.id}
+                  reviewId={review.id}
+                  sectionName={review.section_name}
+                  fileName={review.file_name}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         <h2 className="text-lg font-semibold mb-4">Action Items</h2>
         <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02] mb-8">

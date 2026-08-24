@@ -9,12 +9,9 @@
   min_rows?: number;
   fields?: ToolField[];
   shown_when?: string;
+  hint?: string;
 };
 
-// Local browser date, not UTC. Using getFullYear/getMonth/getDate (local
-// methods) rather than toISOString (UTC) avoids the exact bug found
-// tonight: past a certain hour Eastern, UTC has already rolled into
-// tomorrow, so a "default: today" date field showed the wrong day.
 export function localToday(): string {
   const now = new Date();
   const y = now.getFullYear();
