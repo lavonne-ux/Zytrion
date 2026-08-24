@@ -9,6 +9,7 @@ import BookingWidget from "@/components/BookingWidget";
 import ToolForm from "@/components/ToolForm";
 import ToolWorksheet from "@/components/ToolWorksheet";
 import ToolUpload from "@/components/ToolUpload";
+import MaintenanceDashboard from "@/components/MaintenanceDashboard";
 import ActionItemCheckbox from "@/components/ActionItemCheckbox";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
@@ -265,6 +266,8 @@ export default async function PortalPage() {
                         label={kitType === "sprint" ? "Kickoff Call" : "Consultation"}
                       />
                     </div>
+                  ) : phases.length === 0 ? (
+                    <MaintenanceDashboard />
                   ) : (
                     <div className="space-y-4">
                       {phases.map((phase) => (
