@@ -4,6 +4,7 @@ import SignOutButton from "@/components/SignOutButton";
 import BuyKitButton from "@/components/BuyKitButton";
 import PhaseProgressButton from "@/components/PhaseProgressButton";
 import BookingWidget from "@/components/BookingWidget";
+import ToolForm from "@/components/ToolForm";
 import ActionItemCheckbox from "@/components/ActionItemCheckbox";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
@@ -17,7 +18,7 @@ type PhaseWithProgress = {
   title: string;
   objective: string | null;
   evidence_produced: string | null;
-  tools: { tool_name: string; portal_render_type: string; description: string | null } | null;
+  tools: { id: string; tool_name: string; portal_render_type: string; description: string | null; field_schema: any } | null;
   status: PhaseStatus;
   reviewStatus: ReviewStatus;
   reviewerNotes: string | null;
@@ -77,7 +78,7 @@ export default async function PortalPage() {
       const { data: phases } = await supabase
         .from("kit_phases")
         .select(
-          "id, phase_number, day_start, day_end, title, objective, evidence_produced, tools ( tool_name, portal_render_type, description )"
+          "id, phase_number, day_start, day_end, title, objective, evidence_produced, tools ( id, tool_name, portal_render_type, description, field_schema )"
         )
         .eq("kit_id", enrollment.kit_id)
         .order("sort_order");
@@ -281,12 +282,21 @@ export default async function PortalPage() {
                               )}
                             </div>
                           )}
-                          <PhaseProgressButton
-                            kitPhaseId={phase.id}
-                            status={phase.status}
-                            reviewStatus={phase.reviewStatus}
-                            reviewerNotes={phase.reviewerNotes}
-                          />
+                          {phase.tools?.field_schema && phase.status !== "complete" ? (
+                            <ToolForm
+                              toolId={phase.tools.id}
+                              kitPhaseId={phase.id}
+                              toolName={phase.tools.tool_name}
+                              fieldSchema={phase.tools.field_schema}
+                            />
+                          ) : (
+                            <PhaseProgressButton
+                              kitPhaseId={phase.id}
+                              status={phase.status}
+                              reviewStatus={phase.reviewStatus}
+                              reviewerNotes={phase.reviewerNotes}
+                            />
+                          )}
                         </div>
                       ))}
                     </div>
