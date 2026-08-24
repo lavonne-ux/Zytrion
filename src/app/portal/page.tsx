@@ -10,6 +10,8 @@ import ToolForm from "@/components/ToolForm";
 import ToolWorksheet from "@/components/ToolWorksheet";
 import ToolUpload from "@/components/ToolUpload";
 import MaintenanceDashboard from "@/components/MaintenanceDashboard";
+import ToolChecklist from "@/components/ToolChecklist";
+import ToolLog from "@/components/ToolLog";
 import ActionItemCheckbox from "@/components/ActionItemCheckbox";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
@@ -318,6 +320,19 @@ export default async function PortalPage() {
                               kitPhaseId={phase.id}
                               toolName={phase.tools.tool_name}
                               sections={(phase.tools.field_schema.find((f: any) => f.sections)?.sections) ?? []}
+                            />
+                          ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "checklist" ? (
+                            <ToolChecklist
+                              toolId={phase.tools.id}
+                              kitPhaseId={phase.id}
+                              toolName={phase.tools.tool_name}
+                              fieldSchema={phase.tools.field_schema}
+                            />
+                          ) : phase.tools?.portal_render_type === "log" ? (
+                            <ToolLog
+                              toolId={phase.tools.id}
+                              kitPhaseId={phase.id}
+                              toolName={phase.tools.tool_name}
                             />
                           ) : phase.status === "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
                             <a
