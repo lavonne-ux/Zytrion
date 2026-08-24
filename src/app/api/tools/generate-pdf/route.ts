@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
 
   const fileName = `${tool.tool_name.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
