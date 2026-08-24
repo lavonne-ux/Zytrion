@@ -1,19 +1,7 @@
 ﻿"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-type Field = {
-  name: string;
-  label?: string;
-  type: string;
-  options?: string[];
-  default?: string;
-  required?: boolean;
-  columns?: string[];
-  min_rows?: number;
-  fields?: Field[];
-  shown_when?: string;
-};
+import { ToolField, localToday, initialValuesFor } from "@/lib/tools/toolFieldTypes";
 
 export default function ToolForm({
   toolId,
@@ -24,20 +12,12 @@ export default function ToolForm({
   toolId: string;
   kitPhaseId: string;
   toolName: string;
-  fieldSchema: Field[];
+  fieldSchema: ToolField[];
 }) {
   const router = useRouter();
-  const today = new Date().toISOString().split("T")[0];
+  const today = localToday();
 
-  const initial: Record<string, any> = {};
-  for (const f of fieldSchema) {
-    if (f.type === "date" && f.default === "today") initial[f.name] = today;
-    else if (f.type === "repeatable_row") initial[f.name] = [];
-    else if (f.type === "boolean") initial[f.name] = false;
-    else initial[f.name] = "";
-  }
-
-  const [values, setValues] = useState<Record<string, any>>(initial);
+  const [values, setValues] = useState<Record<string, any>>(() => initialValuesFor(fieldSchema));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -87,7 +67,7 @@ export default function ToolForm({
     }
   }
 
-  function renderField(field: Field) {
+  function renderField(field: ToolField) {
     const label = field.label ?? field.name;
 
     if (field.shown_when) {
@@ -130,7 +110,7 @@ export default function ToolForm({
             <input
               type="date"
               value={values[field.name] ?? ""}
-              max={field.name.includes("resolution_date") || field.default === "today" ? today : undefined}
+              max={field.default === "today" ? today : undefined}
               onChange={(e) => setField(field.name, e.target.value)}
               className="w-full bg-white/[0.03] border border-white/10 rounded-md p-2.5 text-sm text-white"
             />

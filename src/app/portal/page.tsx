@@ -5,6 +5,8 @@ import BuyKitButton from "@/components/BuyKitButton";
 import PhaseProgressButton from "@/components/PhaseProgressButton";
 import BookingWidget from "@/components/BookingWidget";
 import ToolForm from "@/components/ToolForm";
+import ToolWorksheet from "@/components/ToolWorksheet";
+import ToolUpload from "@/components/ToolUpload";
 import ActionItemCheckbox from "@/components/ActionItemCheckbox";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
@@ -282,12 +284,26 @@ export default async function PortalPage() {
                               )}
                             </div>
                           )}
-                          {phase.tools?.field_schema && phase.status !== "complete" ? (
+                          {phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
                             <ToolForm
                               toolId={phase.tools.id}
                               kitPhaseId={phase.id}
                               toolName={phase.tools.tool_name}
                               fieldSchema={phase.tools.field_schema}
+                            />
+                          ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "worksheet" ? (
+                            <ToolWorksheet
+                              toolId={phase.tools.id}
+                              kitPhaseId={phase.id}
+                              toolName={phase.tools.tool_name}
+                              fieldSchema={phase.tools.field_schema}
+                            />
+                          ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "upload" ? (
+                            <ToolUpload
+                              toolId={phase.tools.id}
+                              kitPhaseId={phase.id}
+                              toolName={phase.tools.tool_name}
+                              sections={(phase.tools.field_schema.find((f: any) => f.sections)?.sections) ?? []}
                             />
                           ) : (
                             <PhaseProgressButton
