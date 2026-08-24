@@ -60,10 +60,6 @@ export default async function AdminPage() {
 
   const pendingReviewCount = queue?.length ?? 0;
 
-  // Live Stripe data. Standard read calls, no per-call charge, Stripe's
-  // pricing is transaction-fee based, not API-usage based. Wrapped so a
-  // Stripe outage or rate limit never breaks the rest of the dashboard,
-  // it just quietly shows nothing in this one section.
   let availableBalanceCents = 0;
   let revenue30DaysCents = 0;
   let stripeError = false;
@@ -133,84 +129,117 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold mb-4">Upcoming Bookings</h2>
-        {!upcomingBookings || upcomingBookings.length === 0 ? (
-          <p className="text-sm text-zy-chrome mb-10">Nothing scheduled right now.</p>
-        ) : (
-          <div className="space-y-2 mb-10">
-            {upcomingBookings.map((b: any) => (
-              <Link
-                key={b.id}
-                href={`/admin/clients/${b.client_id}`}
-                className="flex items-center justify-between border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
-              >
-                <div>
-                  <p className="text-sm text-white font-medium">
-                    {b.profiles?.contact_name ?? b.profiles?.contact_email}
+        <details open className="mb-10 group">
+          <summary className="cursor-pointer list-none flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">
+              Upcoming Bookings
+              <span className="ml-3 text-sm font-normal text-zy-chrome">
+                ({upcomingBookings?.length ?? 0})
+              </span>
+            </h2>
+            <span className="text-zy-chrome text-sm group-open:hidden">Show</span>
+            <span className="text-zy-chrome text-sm hidden group-open:inline">Hide</span>
+          </summary>
+          {!upcomingBookings || upcomingBookings.length === 0 ? (
+            <p className="text-sm text-zy-chrome">Nothing scheduled right now.</p>
+          ) : (
+            <div className="space-y-2">
+              {upcomingBookings.map((b: any) => (
+                <Link
+                  key={b.id}
+                  href={`/admin/clients/${b.client_id}`}
+                  className="flex items-center justify-between border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm text-white font-medium">
+                      {b.profiles?.contact_name ?? b.profiles?.contact_email}
+                    </p>
+                    <p className="text-xs text-zy-chrome mt-1">
+                      {b.client_kit_enrollments?.kits?.title ?? "Session"}
+                    </p>
+                  </div>
+                  <p className="text-xs text-zy-chrome text-right">
+                    {new Date(b.slot_start).toLocaleString(undefined, {
+                      weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                    })}
                   </p>
-                  <p className="text-xs text-zy-chrome mt-1">
-                    {b.client_kit_enrollments?.kits?.title ?? "Session"}
+                </Link>
+              ))}
+            </div>
+          )}
+        </details>
+
+        <details open className="mb-12 group">
+          <summary className="cursor-pointer list-none flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">
+              Review Queue
+              <span className="ml-3 text-sm font-normal text-zy-chrome">
+                ({pendingReviewCount})
+              </span>
+            </h2>
+            <span className="text-zy-chrome text-sm group-open:hidden">Show</span>
+            <span className="text-zy-chrome text-sm hidden group-open:inline">Hide</span>
+          </summary>
+          {!queue || queue.length === 0 ? (
+            <div className="border border-white/10 rounded-lg p-8 bg-white/[0.02] text-center">
+              <p className="text-white font-medium mb-2">Nothing waiting on review</p>
+              <p className="text-sm text-zy-chrome leading-relaxed">
+                Every completed phase with evidence attached will show up here
+                the moment a client submits one.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {queue.map((item: any) => (
+                <div key={item.id} className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
+                  <p className="text-xs text-zy-chrome/70 uppercase tracking-wide mb-1">
+                    {item.kit_phases?.kits?.title}, Phase {item.kit_phases?.phase_number}
                   </p>
+                  <h3 className="text-white font-semibold mb-1">{item.kit_phases?.title}</h3>
+                  <p className="text-sm text-zy-chrome mb-3">
+                    {item.profiles?.contact_name} ({item.profiles?.contact_email})
+                  </p>
+                  <div className="border border-white/10 rounded-md p-4 bg-white/[0.02]">
+                    <p className="text-xs text-zy-chrome/70 uppercase tracking-wide mb-1">
+                      Submitted Evidence
+                    </p>
+                    <p className="text-sm text-white">
+                      {item.evidence_artifact_ref?.note ?? "No note recorded."}
+                    </p>
+                  </div>
+                  <ReviewDecisionButtons progressId={item.id} />
                 </div>
-                <p className="text-xs text-zy-chrome text-right">
-                  {new Date(b.slot_start).toLocaleString(undefined, {
-                    weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-                  })}
+              ))}
+            </div>
+          )}
+        </details>
+
+        <details className="group">
+          <summary className="cursor-pointer list-none flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">
+              Clients
+              <span className="ml-3 text-sm font-normal text-zy-chrome">
+                ({clients?.length ?? 0})
+              </span>
+            </h2>
+            <span className="text-zy-chrome text-sm group-open:hidden">Show</span>
+            <span className="text-zy-chrome text-sm hidden group-open:inline">Hide</span>
+          </summary>
+          <div className="space-y-2">
+            {clients?.map((client) => (
+              <Link
+                key={client.id}
+                href={`/admin/clients/${client.id}`}
+                className="block border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
+              >
+                <p className="text-white font-medium">
+                  {client.contact_name || client.business_name || "Unnamed"}
                 </p>
+                <p className="text-xs text-zy-chrome mt-1">{client.contact_email}</p>
               </Link>
             ))}
           </div>
-        )}
-
-        <h2 className="text-xl font-semibold mb-4">Review Queue</h2>
-        {!queue || queue.length === 0 ? (
-          <div className="border border-white/10 rounded-lg p-8 bg-white/[0.02] text-center mb-12">
-            <p className="text-white font-medium mb-2">Nothing waiting on review</p>
-            <p className="text-sm text-zy-chrome leading-relaxed">
-              Every completed phase with evidence attached will show up here
-              the moment a client submits one.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4 mb-12">
-            {queue.map((item: any) => (
-              <div key={item.id} className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
-                <p className="text-xs text-zy-chrome/70 uppercase tracking-wide mb-1">
-                  {item.kit_phases?.kits?.title}, Phase {item.kit_phases?.phase_number}
-                </p>
-                <h3 className="text-white font-semibold mb-1">{item.kit_phases?.title}</h3>
-                <p className="text-sm text-zy-chrome mb-3">
-                  {item.profiles?.contact_name} ({item.profiles?.contact_email})
-                </p>
-                <div className="border border-white/10 rounded-md p-4 bg-white/[0.02]">
-                  <p className="text-xs text-zy-chrome/70 uppercase tracking-wide mb-1">
-                    Submitted Evidence
-                  </p>
-                  <p className="text-sm text-white">
-                    {item.evidence_artifact_ref?.note ?? "No note recorded."}
-                  </p>
-                </div>
-                <ReviewDecisionButtons progressId={item.id} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        <h2 className="text-xl font-semibold mb-6">Clients</h2>
-        <div className="space-y-2">
-          {clients?.map((client) => (
-            <Link
-              key={client.id}
-              href={`/admin/clients/${client.id}`}
-              className="block border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
-            >
-              <p className="text-white font-medium">
-                {client.contact_name || client.business_name || "Unnamed"}
-              </p>
-              <p className="text-xs text-zy-chrome mt-1">{client.contact_email}</p>
-            </Link>
-          ))}
-        </div>
+        </details>
       </div>
     </main>
   );
