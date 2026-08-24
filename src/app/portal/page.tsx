@@ -14,6 +14,7 @@ import QuarterlyGovernanceReview from "@/components/QuarterlyGovernanceReview";
 import AnnualGovernanceCalendar from "@/components/AnnualGovernanceCalendar";
 import ToolChecklist from "@/components/ToolChecklist";
 import ToolLog from "@/components/ToolLog";
+import FinancialTraceabilityWorksheet from "@/components/FinancialTraceabilityWorksheet";
 import ActionItemCheckbox from "@/components/ActionItemCheckbox";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
@@ -312,6 +313,12 @@ export default async function PortalPage() {
                               kitPhaseId={phase.id}
                               toolName={phase.tools.tool_name}
                               fieldSchema={phase.tools.field_schema}
+                            />
+                          ) : phase.status !== "complete" && phase.tools?.tool_name === "Financial Traceability Worksheet" ? (
+                            <FinancialTraceabilityWorksheet
+                              toolId={phase.tools.id}
+                              kitPhaseId={phase.id}
+                              toolName={phase.tools.tool_name}
                             />
                           ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "worksheet" ? (
                             <ToolWorksheet
