@@ -4,19 +4,16 @@
 // with a client-side search box on top powered by /api/kb/search.
 // This is the page to link from the site nav / footer.
 
-import { createClient } from '@supabase/supabase-js';
+import { createServiceRoleClient } from '@/lib/supabase/server';
 import FaqSearch from './FaqSearch';
 
 export const revalidate = 3600; // re-fetch from Supabase at most once an hour
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 type Row = { id: string; category: string; source: string; question: string; answer: string };
 
 export default async function FaqPage() {
+  const supabase = createServiceRoleClient();
+
   const { data } = await supabase
     .from('knowledge_base_qa')
     .select('id, category, source, question, answer')

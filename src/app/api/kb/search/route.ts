@@ -7,16 +7,7 @@
 // GET /api/kb/search?q=your+question&limit=5
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Uses the service role key on the server only. Never expose this key
-// client-side. If you already have a shared server client (e.g.
-// lib/supabase/server.ts), swap this out for that instead of duplicating
-// the client here.
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createServiceRoleClient } from '@/lib/supabase/server';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -29,6 +20,8 @@ export async function GET(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  const supabase = createServiceRoleClient();
 
   // plainto_tsquery tolerates natural-language phrasing ("what is decision flow")
   // far better than a hand-built boolean query, which is what a real user types.
