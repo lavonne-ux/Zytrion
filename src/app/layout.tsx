@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import KnowledgeBaseWidget from "@/components/KnowledgeBaseWidget";
 
 export const metadata: Metadata = {
   title: "Zytrion | Governance Readiness Platform",
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body>
         <Nav />
         {children}
+        <KnowledgeBaseWidget />
       </body>
     </html>
   );
