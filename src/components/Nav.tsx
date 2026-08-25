@@ -1,13 +1,11 @@
 ﻿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
-
 export default async function Nav() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   return (
     <header
       className="border-b border-white/10"
@@ -43,6 +41,9 @@ export default async function Nav() {
           </Link>
           <Link href="/store" className="text-zy-chrome hover:text-white transition-colors">
             Store
+          </Link>
+          <Link href="/faq" className="text-zy-chrome hover:text-white transition-colors">
+            FAQ
           </Link>
           {user ? (
             <>
