@@ -331,6 +331,7 @@ export default function ToolForm({
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} submitted.</p>
         <p className="text-sm text-zy-chrome mt-1 mb-4">Your record has been saved.</p>
+          <a
 
           
           href={`/api/tools/generate-pdf?kitPhaseId=${kitPhaseId}`}
