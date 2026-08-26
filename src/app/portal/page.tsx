@@ -77,14 +77,43 @@ export default async function PortalPage() {
     .order("started_at", { ascending: false });
 
   const allEnrollments = enrollments ?? [];
-  const hasActiveKit = allEnrollments.length > 0;
+
+  // Admin-only: every kit the account hasn't actually purchased still shows
+  // up here as a synthetic, clearly-labeled preview enrollment, so admin can
+  // browse and demo any kit's real phases and tools without a fake purchase
+  // record ever touching client_kit_enrollments.
+  let displayEnrollments: any[] = allEnrollments;
+  if (isAdmin) {
+    const { data: allKits } = await supabase
+      .from("kits")
+      .select("id, title, kit_type")
+      .order("tier_id");
+
+    const enrolledKitIds = new Set(allEnrollments.map((e: any) => e.kit_id));
+    const previewEnrollments = (allKits ?? [])
+      .filter((k: any) => !enrolledKitIds.has(k.id))
+      .map((k: any) => ({
+        id: `preview-${k.id}`,
+        kit_id: k.id,
+        status: "preview",
+        current_phase: 1,
+        kits: { title: k.title, kit_type: k.kit_type },
+        isAdminPreview: true,
+      }));
+
+    displayEnrollments = [...allEnrollments, ...previewEnrollments];
+  }
+
+  const hasActiveKit = displayEnrollments.length > 0;
 
   const enrollmentsWithPhases = await Promise.all(
-    allEnrollments.map(async (enrollment: any) => {
+    displayEnrollments.map(async (enrollment: any) => {
       const kitType = enrollment.kits?.kit_type;
       const isBookable = BOOKABLE_KIT_TYPES.includes(kitType);
+      const isAdminPreview = Boolean(enrollment.isAdminPreview);
+
       if (isBookable) {
-        return { enrollment, isBookable: true, kitType, phases: [] as PhaseWithProgress[] };
+        return { enrollment, isBookable: true, kitType, phases: [] as PhaseWithProgress[], isAdminPreview };
       }
 
       const { data: phases } = await supabase
@@ -95,14 +124,16 @@ export default async function PortalPage() {
         .eq("kit_id", enrollment.kit_id)
         .order("sort_order");
 
-      const { data: progress } = await supabase
-        .from("client_phase_progress")
-        .select("kit_phase_id, status, review_status, reviewer_notes")
-        .eq("client_id", user.id);
-
-      const progressMap = Object.fromEntries(
-        (progress ?? []).map((p) => [p.kit_phase_id, p])
-      );
+      // Preview kits have no real client progress to load, real client
+      // enrollments load exactly as before.
+      let progressMap: Record<string, any> = {};
+      if (!isAdminPreview) {
+        const { data: progress } = await supabase
+          .from("client_phase_progress")
+          .select("kit_phase_id, status, review_status, reviewer_notes")
+          .eq("client_id", user.id);
+        progressMap = Object.fromEntries((progress ?? []).map((p) => [p.kit_phase_id, p]));
+      }
 
       const phasesWithProgress: PhaseWithProgress[] = (phases ?? []).map((p: any) => ({
         ...p,
@@ -111,7 +142,7 @@ export default async function PortalPage() {
         reviewerNotes: progressMap[p.id]?.reviewer_notes ?? null,
       }));
 
-      return { enrollment, isBookable: false, kitType, phases: phasesWithProgress };
+      return { enrollment, isBookable: false, kitType, phases: phasesWithProgress, isAdminPreview };
     })
   );
 
@@ -126,7 +157,7 @@ export default async function PortalPage() {
         <div className="flex items-center justify-between mb-10">
           <div>
             <p className="text-zy-light-blue text-lg font-bold tracking-wide uppercase mb-1">
-              Kit Portal
+              Client Portal
             </p>
             <h1 className="text-2xl font-semibold">
               Welcome, {profile?.contact_name || user.email}
@@ -195,8 +226,8 @@ export default async function PortalPage() {
             </summary>
             <div className="px-6 pb-6 space-y-3">
               {gridResults.map((result: any) => (
+
                 
-                <a
                   key={result.id}
                   href={`/results/${result.id}`}
                   className="block border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
@@ -232,7 +263,7 @@ export default async function PortalPage() {
                 ({enrollmentsWithPhases.length})
               </span>
             </h2>
-            {enrollmentsWithPhases.map(({ enrollment, isBookable, kitType, phases }, idx) => (
+            {enrollmentsWithPhases.map(({ enrollment, isBookable, kitType, phases, isAdminPreview }, idx) => (
               <details
                 key={enrollment.id}
                 open={idx === 0}
@@ -240,8 +271,13 @@ export default async function PortalPage() {
               >
                 <summary className="cursor-pointer list-none px-6 py-5 flex items-center justify-between">
                   <div>
-                    <p className="text-white font-semibold text-lg">
+                    <p className="text-white font-semibold text-lg flex items-center gap-2">
                       {(enrollment as any).kits?.title ?? "Your Kit"}
+                      {isAdminPreview && (
+                        <span className="text-[10px] uppercase tracking-wide font-medium text-yellow-400 border border-yellow-500/40 rounded px-1.5 py-0.5">
+                          Preview
+                        </span>
+                      )}
                     </p>
                     <p className="text-sm text-zy-chrome mt-1">
                       Status: {enrollment.status}
@@ -265,18 +301,38 @@ export default async function PortalPage() {
                             : "A single 30-minute session with LaVonne, direct guidance on a specific governance question."}
                         </p>
                       </div>
-                      <BookingWidget
-                        enrollmentId={enrollment.id}
-                        kind={kitType as "sprint" | "consultation"}
-                        label={kitType === "sprint" ? "Kickoff Call" : "Consultation"}
-                      />
+                      {isAdminPreview ? (
+                        <div className="border border-yellow-500/30 bg-yellow-500/5 rounded-lg p-6">
+                          <p className="text-sm text-yellow-400">
+                            Preview mode: this kit type is booking-based. Real availability and
+                            booking flow isn&apos;t shown here to avoid creating a real
+                            appointment on a preview kit.
+                          </p>
+                        </div>
+                      ) : (
+                        <BookingWidget
+                          enrollmentId={enrollment.id}
+                          kind={kitType as "sprint" | "consultation"}
+                          label={kitType === "sprint" ? "Kickoff Call" : "Consultation"}
+                        />
+                      )}
                     </div>
                   ) : phases.length === 0 ? (
-                    <div className="space-y-6">
-                      <MaintenanceDashboard />
-                      <QuarterlyGovernanceReview />
-                      <AnnualGovernanceCalendar />
-                    </div>
+                    isAdminPreview ? (
+                      <div className="border border-yellow-500/30 bg-yellow-500/5 rounded-lg p-6">
+                        <p className="text-sm text-yellow-400">
+                          Preview mode: this kit&apos;s maintenance dashboard, quarterly review,
+                          and annual calendar are client-data views with no demo mode yet, not
+                          shown here to avoid touching real records.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <MaintenanceDashboard />
+                        <QuarterlyGovernanceReview />
+                        <AnnualGovernanceCalendar />
+                      </div>
+                    )
                   ) : (
                     <div className="space-y-4">
                       {phases.map((phase) => (
@@ -307,7 +363,22 @@ export default async function PortalPage() {
                               )}
                             </div>
                           )}
-                          {phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
+                          {isAdminPreview && phase.tools?.portal_render_type === "form" ? (
+                            <ToolForm
+                              toolId={phase.tools.id}
+                              kitPhaseId={phase.id}
+                              toolName={phase.tools.tool_name}
+                              fieldSchema={phase.tools.field_schema}
+                              demoMode
+                            />
+                          ) : isAdminPreview ? (
+                            <div className="border border-yellow-500/30 bg-yellow-500/5 rounded-md p-4">
+                              <p className="text-xs text-yellow-400">
+                                Preview mode: this tool type doesn&apos;t have a demo-safe mode
+                                yet, showing structure only, not the live interactive version.
+                              </p>
+                            </div>
+                          ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
                             <ToolForm
                               toolId={phase.tools.id}
                               kitPhaseId={phase.id}
@@ -348,7 +419,7 @@ export default async function PortalPage() {
                               toolName={phase.tools.tool_name}
                             />
                           ) : phase.status === "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
-                            <a
+                            
                               href={`/api/tools/generate-pdf?kitPhaseId=${phase.id}`}
                               className="inline-block border border-zy-electric/40 text-zy-electric px-4 py-2 rounded-md text-sm hover:bg-zy-electric/10 transition-colors"
                             >
