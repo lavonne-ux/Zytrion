@@ -1,4 +1,6 @@
-﻿import { useState, useEffect } from "react";
+﻿"use client";
+
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ToolField, localToday, initialValuesFor } from "@/lib/tools/toolFieldTypes";
 
