@@ -4,13 +4,6 @@
   electric: "#1565FF",
 };
 
-/**
- * Shared shell for every Zytrion transactional email: logo, wordmark,
- * near-black background, and the same footer already live on the
- * results page (contact line, copyright line). All styles are inline
- * because most email clients strip <style> blocks and ignore external
- * CSS entirely.
- */
 function emailShell(bodyHtml: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -72,12 +65,6 @@ export interface TierResultNoticeParams {
   resultsUrl: string;
 }
 
-/**
- * Sent from the assessment submit route, right after a diagnostic is
- * scored and saved. This is the message that currently does not exist
- * anywhere in the flow, someone finishes the diagnostic and nothing
- * follows up.
- */
 export function tierResultNoticeEmail(params: TierResultNoticeParams): {
   subject: string;
   html: string;
@@ -111,10 +98,6 @@ export interface PaymentReceiptParams {
   resultsUrl: string;
 }
 
-/**
- * Sent from the Stripe webhook on checkout.session.completed. Confirms
- * the charge and links straight to the now-unlocked Full Report.
- */
 export function paymentReceiptEmail(params: PaymentReceiptParams): {
   subject: string;
   html: string;
@@ -148,11 +131,6 @@ export interface FounderPurchasePingParams {
   resultsUrl: string;
 }
 
-/**
- * Sent to the founder inbox on the same webhook event as the receipt.
- * Plain and functional, not meant to carry the full brand shell, this
- * one is for LaVonne, not a client.
- */
 export function founderPurchasePingEmail(params: FounderPurchasePingParams): {
   subject: string;
   html: string;
@@ -184,11 +162,6 @@ export interface KitPurchaseReceiptParams {
   portalUrl: string;
 }
 
-/**
- * Sent from the Stripe webhook on checkout.session.completed for a
- * kit purchase. Confirms the charge and sends the client straight
- * back into the portal where their new enrollment is now waiting.
- */
 export function kitPurchaseReceiptEmail(params: KitPurchaseReceiptParams): {
   subject: string;
   html: string;
@@ -219,11 +192,6 @@ export interface FounderKitPurchasePingParams {
   amountCents: number;
 }
 
-/**
- * Sent to the founder inbox on the same webhook event as the kit
- * receipt. Plain and functional, matches founderPurchasePingEmail's
- * style, this one is for LaVonne, not a client.
- */
 export function founderKitPurchasePingEmail(params: FounderKitPurchasePingParams): {
   subject: string;
   html: string;
@@ -246,6 +214,61 @@ export function founderKitPurchasePingEmail(params: FounderKitPurchasePingParams
   };
 }
 
+export interface ManualPurchaseReceiptParams {
+  contactName: string;
+  amountCents: number;
+  portalUrl: string;
+}
+
+export function manualPurchaseReceiptEmail(params: ManualPurchaseReceiptParams): {
+  subject: string;
+  html: string;
+} {
+  const { contactName, amountCents, portalUrl } = params;
+  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const body = `
+    <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
+    <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
+      Payment confirmed. Your copy of the Zytrion Enterprise in Motion Manual is ready to download inside your Client Portal.
+    </p>
+    <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
+      Amount charged: $${amount}
+    </p>
+    ${button("Go to Your Client Portal", portalUrl)}
+  `;
+  return {
+    subject: "Your Zytrion Manual Is Ready",
+    html: emailShell(body),
+  };
+}
+
+export interface FounderManualPurchasePingParams {
+  contactName: string;
+  contactEmail: string;
+  amountCents: number;
+}
+
+export function founderManualPurchasePingEmail(params: FounderManualPurchasePingParams): {
+  subject: string;
+  html: string;
+} {
+  const { contactName, contactEmail, amountCents } = params;
+  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const html = `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:24px;font-family:Calibri,Arial,sans-serif;background-color:#ffffff;color:#000000;">
+  <p style="font-size:15px;">Manual purchased, $${amount}.</p>
+  <table role="presentation" cellpadding="4" cellspacing="0" style="font-size:14px;">
+    <tr><td><strong>Contact:</strong></td><td>${contactName} (${contactEmail})</td></tr>
+  </table>
+</body>
+</html>`;
+  return {
+    subject: `Manual Purchased, ${contactName}`,
+    html,
+  };
+}
+
 export interface PhaseSubmittedForReviewParams {
   contactName: string;
   contactEmail: string;
@@ -256,12 +279,6 @@ export interface PhaseSubmittedForReviewParams {
   adminUrl: string;
 }
 
-/**
- * Sent to the founder inbox the moment a client marks a phase
- * complete with a real evidence note attached. Plain and functional,
- * matches founderKitPurchasePingEmail's style, this one is for
- * LaVonne, not a client.
- */
 export function phaseSubmittedForReviewEmail(params: PhaseSubmittedForReviewParams): {
   subject: string;
   html: string;
@@ -294,11 +311,6 @@ export interface PhaseReviewDecisionParams {
   portalUrl: string;
 }
 
-/**
- * Sent to the client the moment their submitted evidence is reviewed,
- * approved or sent back. Carries the full brand shell since this one
- * is client-facing.
- */
 export function phaseReviewDecisionEmail(params: PhaseReviewDecisionParams): {
   subject: string;
   html: string;

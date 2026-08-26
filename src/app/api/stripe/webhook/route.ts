@@ -7,6 +7,8 @@ import {
   founderPurchasePingEmail,
   kitPurchaseReceiptEmail,
   founderKitPurchasePingEmail,
+  manualPurchaseReceiptEmail,
+  founderManualPurchasePingEmail,
 } from "@/lib/email/templates";
 
 export async function POST(req: Request) {
@@ -29,6 +31,7 @@ export async function POST(req: Request) {
     const assessmentId = session.metadata?.assessmentId;
     const kitId = session.metadata?.kit_id;
     const clientId = session.metadata?.client_id;
+    const product = session.metadata?.product;
 
     // Sprint (or any future kit) purchased with no existing account.
     // Creates the account, profile (via the handle_new_user trigger),
@@ -196,6 +199,69 @@ export async function POST(req: Request) {
         }
       } catch (err) {
         console.error("Kit purchase confirmation email(s) failed to send:", err);
+      }
+
+      return NextResponse.json({ received: true });
+    }
+
+    // Manual purchase: single digital unlock, no enrollment, no phases.
+    // Recorded in payments the same way Kits are, distinguished by
+    // product === "manual" in the session metadata. The download route
+    // checks this same payments table before ever generating a signed
+    // URL, so this insert is the actual gate, the receipt email link
+    // is not.
+    if (product === "manual" && clientId) {
+      const supabase = createAdminClient();
+      const amountCents = session.amount_total ?? 0;
+
+      const { error: paymentError } = await supabase.from("payments").insert({
+        client_id: clientId,
+        product: "Zytrion Enterprise in Motion Manual",
+        amount_cents: amountCents,
+        status: "succeeded",
+        stripe_reference: session.id,
+      });
+      if (paymentError) {
+        console.error("Manual payment record failed to save:", paymentError.message);
+      }
+
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("contact_name, contact_email")
+          .eq("id", clientId)
+          .single();
+
+        const resend = getResendClient();
+        if (resend && profile?.contact_email) {
+          const portalUrl = "https://www.getzytrion.com/portal";
+
+          const receipt = manualPurchaseReceiptEmail({
+            contactName: profile.contact_name || "there",
+            amountCents,
+            portalUrl,
+          });
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: profile.contact_email,
+            subject: receipt.subject,
+            html: receipt.html,
+          });
+
+          const ping = founderManualPurchasePingEmail({
+            contactName: profile.contact_name || "Unknown",
+            contactEmail: profile.contact_email,
+            amountCents,
+          });
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: FOUNDER_EMAIL,
+            subject: ping.subject,
+            html: ping.html,
+          });
+        }
+      } catch (err) {
+        console.error("Manual purchase confirmation email(s) failed to send:", err);
       }
 
       return NextResponse.json({ received: true });
