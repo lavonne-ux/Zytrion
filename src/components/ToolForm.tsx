@@ -1,5 +1,4 @@
-﻿"use client";
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ToolField, localToday, initialValuesFor } from "@/lib/tools/toolFieldTypes";
 
@@ -8,22 +7,29 @@ export default function ToolForm({
   kitPhaseId,
   toolName,
   fieldSchema,
+  demoMode = false,
 }: {
   toolId: string;
   kitPhaseId: string;
   toolName: string;
   fieldSchema: ToolField[];
+  demoMode?: boolean;
 }) {
   const router = useRouter();
   const today = localToday();
 
   const [values, setValues] = useState<Record<string, any>>(() => initialValuesFor(fieldSchema));
-  const [loadingExisting, setLoadingExisting] = useState(true);
+  const [loadingExisting, setLoadingExisting] = useState(!demoMode);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    // Demo mode never has a real saved submission to preload, skip the fetch.
+    if (demoMode) {
+      setLoadingExisting(false);
+      return;
+    }
     let cancelled = false;
     fetch(`/api/tools/get-submission?kitPhaseId=${kitPhaseId}`)
       .then((res) => res.json())
@@ -39,7 +45,7 @@ export default function ToolForm({
     return () => {
       cancelled = true;
     };
-  }, [kitPhaseId]);
+  }, [kitPhaseId, demoMode]);
 
   function setField(name: string, val: any) {
     setValues((v) => ({ ...v, [name]: val }));
@@ -60,6 +66,37 @@ export default function ToolForm({
 
   function removeRow(name: string, idx: number) {
     setValues((v) => ({ ...v, [name]: (v[name] ?? []).filter((_: any, i: number) => i !== idx) }));
+  }
+
+  function clearFields() {
+    setValues(initialValuesFor(fieldSchema));
+    setError(null);
+  }
+
+  async function handlePreview() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/tools/generate-pdf-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ toolName, fieldSchema, submittedData: values }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Could not generate preview.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      // Revoke shortly after opening; the new tab has already loaded the blob by then.
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch {
+      setError("Could not reach the server.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleSubmit() {
@@ -287,13 +324,15 @@ export default function ToolForm({
     }
   }
 
+  // Real client flow, unchanged: submit saves permanently and locks into
+  // this confirmation state.
   if (done) {
     return (
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} submitted.</p>
         <p className="text-sm text-zy-chrome mt-1 mb-4">Your record has been saved.</p>
-        
-          <a
+
+          
           href={`/api/tools/generate-pdf?kitPhaseId=${kitPhaseId}`}
           className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-2.5 rounded-md text-sm"
         >
@@ -313,15 +352,44 @@ export default function ToolForm({
 
   return (
     <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
+      {demoMode && (
+        <div className="mb-4 border border-yellow-500/30 bg-yellow-500/5 rounded-md px-3 py-2">
+          <p className="text-xs text-yellow-400">
+            Demonstration mode. Nothing typed here is saved. PDF opens in a new tab from
+            whatever is currently in the fields.
+          </p>
+        </div>
+      )}
       {fieldSchema.map((field) => renderField(field))}
       {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
-      <button
-        onClick={handleSubmit}
-        disabled={saving}
-        className="bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-2.5 rounded-md text-sm disabled:opacity-50"
-      >
-        {saving ? "Submitting..." : `Submit ${toolName}`}
-      </button>
+      <div className="flex items-center gap-3">
+        {demoMode ? (
+          <>
+            <button
+              onClick={handlePreview}
+              disabled={saving}
+              className="bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-2.5 rounded-md text-sm disabled:opacity-50"
+            >
+              {saving ? "Generating..." : "Preview PDF"}
+            </button>
+            <button
+              onClick={clearFields}
+              type="button"
+              className="text-sm text-zy-chrome underline hover:text-white"
+            >
+              Clear fields
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-2.5 rounded-md text-sm disabled:opacity-50"
+          >
+            {saving ? "Submitting..." : `Submit ${toolName}`}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
