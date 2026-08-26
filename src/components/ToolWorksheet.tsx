@@ -147,9 +147,9 @@ export default function ToolWorksheet({
               onChange={(e) => setCurrentField(field.name, e.target.value)}
               className={common}
             >
-              <option value="">Select...</option>
+              <option value="" style={{ backgroundColor: "#0A0F2E", color: "#FFFFFF" }}>Select...</option>
               {(field.options ?? []).map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt} style={{ backgroundColor: "#0A0F2E", color: "#FFFFFF" }}>{opt}</option>
               ))}
             </select>
           </div>
