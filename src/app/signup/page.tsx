@@ -1,10 +1,12 @@
 ﻿"use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [businessName, setBusinessName] = useState("");
   const [contactName, setContactName] = useState("");
   const [email, setEmail] = useState("");
@@ -33,7 +35,7 @@ export default function SignUpPage() {
 
     setSubmitting(true);
     const supabase = createClient();
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -45,6 +47,17 @@ export default function SignUpPage() {
     if (signUpError) {
       setError(signUpError.message);
       setSubmitting(false);
+      return;
+    }
+
+    // With email confirmation off, Supabase returns a real session
+    // immediately, no email is ever sent, nothing to wait for. Only
+    // fall back to the "check your email" screen when a session
+    // genuinely wasn't returned, meaning confirmation is actually
+    // required right now.
+    if (data.session) {
+      router.push("/portal");
+      router.refresh();
       return;
     }
 
