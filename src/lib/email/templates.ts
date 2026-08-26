@@ -1,4 +1,4 @@
-const BRAND = {
+﻿const BRAND = {
   nearBlack: "#080C1A",
   chrome: "#C7CDD6",
   electric: "#1565FF",
@@ -198,12 +198,12 @@ export function kitPurchaseReceiptEmail(params: KitPurchaseReceiptParams): {
   const body = `
     <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
-      Payment confirmed. You are enrolled in the ${kitTitle}, and it is waiting for you inside your Zytrion Kit Portal right now.
+      Payment confirmed. You are enrolled in the ${kitTitle}, and it is waiting for you inside your Zytrion Client Portal right now.
     </p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
       Amount charged: $${amount}
     </p>
-    ${button("Go to Your Kit Portal", portalUrl)}
+    ${button("Go to Your Client Portal", portalUrl)}
   `;
   return {
     subject: `You Are Enrolled: ${kitTitle}`,
@@ -314,7 +314,7 @@ export function phaseReviewDecisionEmail(params: PhaseReviewDecisionParams): {
       }
     </p>
     ${reviewerNotes ? `<p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">${reviewerNotes}</p>` : ""}
-    ${button("Go to Your Kit Portal", portalUrl)}
+    ${button("Go to Your Client Portal", portalUrl)}
   `;
   return {
     subject: isApproved
