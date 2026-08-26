@@ -17,7 +17,24 @@ export default function ToolWorksheet({
   const router = useRouter();
   const today = localToday();
 
-  const emptyEntry = () => Object.fromEntries(fieldSchema.map((f) => [f.name, ""]));
+  const emptyEntry = () =>
+    Object.fromEntries(
+      fieldSchema.map((f: any) => {
+        if (f.type === "repeatable_row") {
+          // Some repeatable fields ship real starting rows, e.g. the four
+          // standard approval-threshold tiers, so the client edits a real
+          // starting point instead of inventing categories from scratch.
+          if (f.default_rows && f.columns) {
+            const rows = f.default_rows.map((row: string[]) =>
+              Object.fromEntries(f.columns.map((col: string, i: number) => [col, row[i] ?? ""]))
+            );
+            return [f.name, rows];
+          }
+          return [f.name, []];
+        }
+        return [f.name, ""];
+      })
+    );
 
   const [entries, setEntries] = useState<Record<string, any>[]>([]);
   const [current, setCurrent] = useState<Record<string, any>>(emptyEntry());
@@ -46,6 +63,23 @@ export default function ToolWorksheet({
 
   function setCurrentField(name: string, val: any) {
     setCurrent((c) => ({ ...c, [name]: val }));
+  }
+
+  function addSubRow(name: string, columns: string[]) {
+    const empty = Object.fromEntries(columns.map((c) => [c, ""]));
+    setCurrent((c) => ({ ...c, [name]: [...(c[name] ?? []), empty] }));
+  }
+
+  function updateSubRow(name: string, idx: number, col: string, val: string) {
+    setCurrent((c) => {
+      const rows = [...(c[name] ?? [])];
+      rows[idx] = { ...rows[idx], [col]: val };
+      return { ...c, [name]: rows };
+    });
+  }
+
+  function removeSubRow(name: string, idx: number) {
+    setCurrent((c) => ({ ...c, [name]: (c[name] ?? []).filter((_: any, i: number) => i !== idx) }));
   }
 
   function addEntry() {
@@ -154,6 +188,44 @@ export default function ToolWorksheet({
             </select>
           </div>
         );
+      case "repeatable_row":
+        return (
+          <div key={field.name} className="mb-3">
+            <label className="block text-xs text-zy-chrome mb-2">{label}</label>
+            {field.hint && <p className="text-xs text-zy-chrome/50 mb-2">{field.hint}</p>}
+            <div className="space-y-2">
+              {(current[field.name] ?? []).map((row: Record<string, string>, idx: number) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  {(field.columns ?? []).map((col) => (
+                    <input
+                      key={col}
+                      type="text"
+                      placeholder={col}
+                      value={row[col] ?? ""}
+                      onChange={(e) => updateSubRow(field.name, idx, col, e.target.value)}
+                      className="flex-1 bg-white/[0.03] border border-white/10 rounded-md p-2 text-sm text-white"
+                    />
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => removeSubRow(field.name, idx)}
+                    className="text-xs text-red-400 px-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => addSubRow(field.name, field.columns ?? [])}
+              className="mt-2 text-xs text-zy-light-blue underline"
+            >
+              + Add row
+            </button>
+          </div>
+        );
+
       default:
         return (
           <div key={field.name} className="mb-3">
