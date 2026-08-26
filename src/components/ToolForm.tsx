@@ -236,11 +236,15 @@ export default function ToolForm({
               onChange={(e) => setField(field.name, e.target.value)}
               className="w-full bg-white/[0.03] border border-white/10 rounded-md p-2.5 text-sm text-white"
             >
-              <option value="">Select...</option>
+              <option value="" style={{ backgroundColor: "#0A0F2E", color: "#FFFFFF" }}>Select...</option>
               {(field.options ?? []).map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt} style={{ backgroundColor: "#0A0F2E", color: "#FFFFFF" }}>{opt}</option>
               ))}
-              {field.type === "select_fixed_plus_custom" && <option value="__custom__">Other (describe below)</option>}
+              {field.type === "select_fixed_plus_custom" && (
+                <option value="__custom__" style={{ backgroundColor: "#0A0F2E", color: "#FFFFFF" }}>
+                  Other (describe below)
+                </option>
+              )}
             </select>
             {field.type === "select_fixed_plus_custom" && values[field.name] === "__custom__" && (
               <input
@@ -333,12 +337,7 @@ export default function ToolForm({
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} submitted.</p>
         <p className="text-sm text-zy-chrome mt-1 mb-4">Your record has been saved.</p>
-          <a
-
-          
-          href={`/api/tools/generate-pdf?kitPhaseId=${kitPhaseId}`}
-          className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-2.5 rounded-md text-sm"
-        >
+        <a href={`/api/tools/generate-pdf?kitPhaseId=${kitPhaseId}`} className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-2.5 rounded-md text-sm">
           Download PDF
         </a>
       </div>
