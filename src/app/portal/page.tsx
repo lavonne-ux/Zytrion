@@ -421,6 +421,7 @@ export default async function PortalPage() {
                             />
                           ) : phase.status === "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
                             
+                            <a
                               href={`/api/tools/generate-pdf?kitPhaseId=${phase.id}`}
                               className="inline-block border border-zy-electric/40 text-zy-electric px-4 py-2 rounded-md text-sm hover:bg-zy-electric/10 transition-colors"
                             >
