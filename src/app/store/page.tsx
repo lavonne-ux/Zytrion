@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import BuyKitButton from "@/components/BuyKitButton";
+import BuyManualButton from "@/components/BuyManualButton";
 
 export default async function StorePage() {
   const supabase = await createClient();
@@ -32,6 +33,26 @@ export default async function StorePage() {
         >
           Take the free GRID Diagnostic &rarr;
         </Link>
+
+        <h2 className="text-xl font-semibold text-white mb-6">The Manual</h2>
+        <div className="border border-white/10 rounded-lg p-6 bg-white/[0.02] mb-12">
+          <h3 className="text-white font-semibold mb-1">Zytrion Enterprise in Motion</h3>
+          <p className="text-sm text-zy-chrome mb-4">
+            The complete governance operating system behind GRID, in one manual. The Three Flows, the Five Pillars, the Governance Equation, and the Zytrion Standard, explained in full, the same framework every Implementation Kit is built on.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {user ? (
+              <BuyManualButton label="Get the Manual, $197" />
+            ) : (
+              <Link
+                href="/login"
+                className="bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-3 rounded-md text-sm"
+              >
+                Get the Manual, $197
+              </Link>
+            )}
+          </div>
+        </div>
 
         <h2 className="text-xl font-semibold text-white mb-6">Implementation Kits</h2>
         <div className="space-y-4">
@@ -87,6 +108,3 @@ export default async function StorePage() {
     </main>
   );
 }
-
-
-
