@@ -70,6 +70,15 @@ export default async function PortalPage() {
   const openActionItems = (actionItems ?? []).filter((a) => a.status !== "complete");
   const completedActionItems = (actionItems ?? []).filter((a) => a.status === "complete");
 
+  const { data: manualPurchase } = await supabase
+    .from("payments")
+    .select("id, created_at")
+    .eq("client_id", user.id)
+    .eq("product", "Zytrion Enterprise in Motion Manual")
+    .eq("status", "succeeded")
+    .limit(1)
+    .maybeSingle();
+
   const { data: enrollments } = await supabase
     .from("client_kit_enrollments")
     .select("id, kit_id, status, current_phase, started_at, kits ( title, kit_type )")
@@ -226,13 +235,7 @@ export default async function PortalPage() {
             </summary>
             <div className="px-6 pb-6 space-y-3">
               {gridResults.map((result: any) => (
-
-                
-                <a
-                  key={result.id}
-                  href={`/results/${result.id}`}
-                  className="block border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
-                >
+                <a key={result.id} href={`/results/${result.id}`} className="block border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-white font-medium text-sm">
@@ -254,6 +257,21 @@ export default async function PortalPage() {
               ))}
             </div>
           </details>
+        )}
+
+        {manualPurchase && (
+          <div className="mb-8 border border-white/10 rounded-lg bg-white/[0.02] px-6 py-5">
+            <h2 className="text-lg font-semibold text-white mb-1">Your Manual</h2>
+            <p className="text-sm text-zy-chrome mb-4">
+              Zytrion Enterprise in Motion, purchased{" "}
+              {new Date(manualPurchase.created_at).toLocaleDateString(undefined, {
+                year: "numeric", month: "long", day: "numeric",
+              })}.
+            </p>
+            <a href="/api/manual/download" className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-2.5 rounded-md text-sm">
+              Download PDF
+            </a>
+          </div>
         )}
 
         {hasActiveKit ? (
@@ -420,11 +438,7 @@ export default async function PortalPage() {
                               toolName={phase.tools.tool_name}
                             />
                           ) : phase.status === "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
-                            
-                            <a
-                              href={`/api/tools/generate-pdf?kitPhaseId=${phase.id}`}
-                              className="inline-block border border-zy-electric/40 text-zy-electric px-4 py-2 rounded-md text-sm hover:bg-zy-electric/10 transition-colors"
-                            >
+                            <a href={`/api/tools/generate-pdf?kitPhaseId=${phase.id}`} className="inline-block border border-zy-electric/40 text-zy-electric px-4 py-2 rounded-md text-sm hover:bg-zy-electric/10 transition-colors">
                               Download PDF
                             </a>
                           ) : (
