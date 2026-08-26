@@ -114,15 +114,19 @@ export default function ToolDocumentPdf({
   );
   const signatureValue = submittedData["signature"];
 
+  // The letterhead belongs to whoever owns this document, the client's own
+  // business, not Zytrion. Zytrion's attribution stays in the footer only,
+  // where it belongs on a tool the platform built for someone else's
+  // governance record.
+  const documentOwnerName = businessName || clientName;
+
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.companyName}>ZYTRION INFRASTRUCTURE GROUP, INC.</Text>
+          <Text style={styles.companyName}>{documentOwnerName.toUpperCase()}</Text>
           <Text style={styles.title}>{toolName}</Text>
-          <Text style={styles.meta}>
-            {businessName || clientName} · Generated {generatedDate}
-          </Text>
+          <Text style={styles.meta}>Generated {generatedDate}</Text>
         </View>
 
         {displayFields.map((field) => {
