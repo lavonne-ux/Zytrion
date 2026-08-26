@@ -2,6 +2,7 @@
 import "./globals.css";
 import Nav from "@/components/Nav";
 import KnowledgeBaseWidget from "@/components/KnowledgeBaseWidget";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Zytrion | Governance Readiness Platform",
@@ -19,6 +20,7 @@ export default function RootLayout({
       <body>
         <Nav />
         {children}
+        <Footer />
         <KnowledgeBaseWidget />
       </body>
     </html>
