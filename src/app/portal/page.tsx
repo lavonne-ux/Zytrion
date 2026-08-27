@@ -368,7 +368,7 @@ export default async function PortalPage() {
                               )}
                             </div>
                           )}
-                          {isAdminPreview && phase.tools?.portal_render_type === "form" ? (
+                          {isAdminPreview && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
                             <ToolForm
                               toolId={phase.tools.id}
                               kitPhaseId={phase.id}
