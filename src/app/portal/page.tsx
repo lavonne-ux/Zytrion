@@ -106,45 +106,53 @@ export default async function PortalPage() {
 
   const hasActiveKit = displayEnrollments.length > 0;
 
-  const enrollmentsWithPhases = await Promise.all(
-    displayEnrollments.map(async (enrollment: any) => {
-      const kitType = enrollment.kits?.kit_type;
-      const isBookable = BOOKABLE_KIT_TYPES.includes(kitType);
-      const isAdminPreview = Boolean(enrollment.isAdminPreview);
+  // Sequential, not parallel: admin preview mode can now carry every kit
+  // in the catalog at once since all four tiers are wired, and firing
+  // every kit's phase and progress queries simultaneously was
+  // overwhelming the connection under that load, causing the portal to
+  // crash intermittently. Awaiting one kit's queries before starting the
+  // next removes the burst entirely. A real client with one or two kits
+  // never notices the difference; admin preview just takes a beat longer
+  // instead of failing.
+  const enrollmentsWithPhases: any[] = [];
+  for (const enrollment of displayEnrollments) {
+    const kitType = enrollment.kits?.kit_type;
+    const isBookable = BOOKABLE_KIT_TYPES.includes(kitType);
+    const isAdminPreview = Boolean(enrollment.isAdminPreview);
 
-      if (isBookable) {
-        return { enrollment, isBookable: true, kitType, phases: [] as PhaseWithProgress[], isAdminPreview };
-      }
+    if (isBookable) {
+      enrollmentsWithPhases.push({ enrollment, isBookable: true, kitType, phases: [] as PhaseWithProgress[], isAdminPreview });
+      continue;
+    }
 
-      const { data: phases } = await supabase
-        .from("kit_phases")
-        .select(
-          "id, phase_number, day_start, day_end, title, objective, evidence_produced, tools ( id, tool_name, portal_render_type, description, field_schema )"
-        )
-        .eq("kit_id", enrollment.kit_id)
-        .order("sort_order");
+    const { data: phases } = await supabase
+      .from("kit_phases")
+      .select(
+        "id, phase_number, day_start, day_end, title, objective, evidence_produced, tools ( id, tool_name, portal_render_type, description, field_schema )"
+      )
+      .eq("kit_id", enrollment.kit_id)
+      .order("sort_order");
 
-      // Preview kits have no real client progress to load, real client
-      // enrollments load exactly as before.
-      let progressMap: Record<string, any> = {};
-      if (!isAdminPreview) {
-        const { data: progress } = await supabase
-          .from("client_phase_progress")
-          .select("kit_phase_id, status, review_status, reviewer_notes")
-          .eq("client_id", user.id);
-        progressMap = Object.fromEntries((progress ?? []).map((p) => [p.kit_phase_id, p]));
-      }
+    // Preview kits have no real client progress to load, real client
+    // enrollments load exactly as before.
+    let progressMap: Record<string, any> = {};
+    if (!isAdminPreview) {
+      const { data: progress } = await supabase
+        .from("client_phase_progress")
+        .select("kit_phase_id, status, review_status, reviewer_notes")
+        .eq("client_id", user.id);
+      progressMap = Object.fromEntries((progress ?? []).map((p) => [p.kit_phase_id, p]));
+    }
 
-      const phasesWithProgress: PhaseWithProgress[] = (phases ?? []).map((p: any) => ({
-        ...p,
-        status: progressMap[p.id]?.status ?? "not_started",
-        reviewStatus: progressMap[p.id]?.review_status ?? "pending",
-        reviewerNotes: progressMap[p.id]?.reviewer_notes ?? null,
-      }));
+    const phasesWithProgress: PhaseWithProgress[] = (phases ?? []).map((p: any) => ({
+      ...p,
+      status: progressMap[p.id]?.status ?? "not_started",
+      reviewStatus: progressMap[p.id]?.review_status ?? "pending",
+      reviewerNotes: progressMap[p.id]?.reviewer_notes ?? null,
+    }));
 
-      return { enrollment, isBookable: false, kitType, phases: phasesWithProgress, isAdminPreview };
-    })
-  );
+    enrollmentsWithPhases.push({ enrollment, isBookable: false, kitType, phases: phasesWithProgress, isAdminPreview });
+  }
 
   const { data: kits } = await supabase
     .from("kits")
@@ -226,11 +234,7 @@ export default async function PortalPage() {
             </summary>
             <div className="px-6 pb-6 space-y-3">
               {gridResults.map((result: any) => (
-
-                
-                <a
-                  key={result.id}
-                  href={`/results/${result.id}`}
+                <a key={result.id} href={`/results/${result.id}`}
                   className="block border border-white/10 rounded-lg p-4 bg-white/[0.02] hover:border-zy-electric/40 transition-colors"
                 >
                   <div className="flex items-center justify-between">
@@ -420,9 +424,7 @@ export default async function PortalPage() {
                               toolName={phase.tools.tool_name}
                             />
                           ) : phase.status === "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
-                            
-                            <a
-                              href={`/api/tools/generate-pdf?kitPhaseId=${phase.id}`}
+                            <a href={`/api/tools/generate-pdf?kitPhaseId=${phase.id}`}
                               className="inline-block border border-zy-electric/40 text-zy-electric px-4 py-2 rounded-md text-sm hover:bg-zy-electric/10 transition-colors"
                             >
                               Download PDF
