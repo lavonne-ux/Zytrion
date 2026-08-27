@@ -340,7 +340,7 @@ export default async function PortalPage() {
                     )
                   ) : (
                     <div className="space-y-4">
-                      {phases.map((phase) => (
+                      {phases.map((phase: PhaseWithProgress) => (
                         <div
                           key={phase.id}
                           className="border border-white/10 rounded-lg p-6 bg-white/[0.02]"
