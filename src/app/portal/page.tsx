@@ -3,7 +3,6 @@ import { getAdminStatus } from "@/lib/auth/admin";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
-import BuyKitButton from "@/components/BuyKitButton";
 import PhaseProgressButton from "@/components/PhaseProgressButton";
 import BookingWidget from "@/components/BookingWidget";
 import ToolForm from "@/components/ToolForm";
@@ -153,11 +152,6 @@ export default async function PortalPage() {
 
     enrollmentsWithPhases.push({ enrollment, isBookable: false, kitType, phases: phasesWithProgress, isAdminPreview });
   }
-
-  const { data: kits } = await supabase
-    .from("kits")
-    .select("id, title, price_standard, price_extended, duration_days, purpose_statement")
-    .order("tier_id");
 
   return (
     <main className="min-h-screen bg-zy-near-black text-white">
@@ -446,42 +440,19 @@ export default async function PortalPage() {
             ))}
           </div>
         ) : (
-          <div>
-            <div className="border border-white/10 rounded-lg p-8 bg-white/[0.02] text-center mb-10">
-              <p className="text-white font-medium mb-2">No active kit yet</p>
-              <p className="text-sm text-zy-chrome leading-relaxed">
-                Choose the kit that matches where your business is right
-                now. Once purchased, it appears here with your phase and
-                progress.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {kits?.map((kit) => (
-                <div key={kit.id} className="border border-white/10 rounded-lg p-6 bg-white/[0.02]">
-                  <h3 className="text-white font-semibold mb-1">{kit.title}</h3>
-                  {kit.purpose_statement && (
-                    <p className="text-sm text-zy-chrome mb-4">{kit.purpose_statement}</p>
-                  )}
-                  <div className="flex flex-wrap gap-3">
-                    {kit.price_standard && (
-                      <BuyKitButton
-                        kitId={kit.id}
-                        priceType="standard"
-                        label={`Enroll, $${(kit.price_standard / 100).toLocaleString()}`}
-                      />
-                    )}
-                    {kit.price_extended && (
-                      <BuyKitButton
-                        kitId={kit.id}
-                        priceType="extended"
-                        label={`Extended, $${(kit.price_extended / 100).toLocaleString()}`}
-                      />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="border border-white/10 rounded-lg p-8 bg-white/[0.02] text-center">
+            <p className="text-white font-medium mb-2">No active kit yet</p>
+            <p className="text-sm text-zy-chrome leading-relaxed mb-6">
+              Choose the kit that matches where your business is right
+              now. Once purchased, it appears here with your phase and
+              progress.
+            </p>
+            <Link
+              href="/store"
+              className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-3 rounded-md text-sm"
+            >
+              Browse the Store
+            </Link>
           </div>
         )}
       </div>
