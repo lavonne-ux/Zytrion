@@ -15,6 +15,7 @@ import ToolChecklist from "@/components/ToolChecklist";
 import ToolLog from "@/components/ToolLog";
 import FinancialTraceabilityWorksheet from "@/components/FinancialTraceabilityWorksheet";
 import ActionItemCheckbox from "@/components/ActionItemCheckbox";
+import LogoUploadCard from "@/components/LogoUploadCard";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
 type ReviewStatus = "pending" | "approved" | "needs_revision";
@@ -49,7 +50,7 @@ export default async function PortalPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("contact_name, business_name, contact_email")
+    .select("contact_name, business_name, contact_email, logo_url")
     .eq("id", user.id)
     .single();
 
@@ -174,6 +175,8 @@ export default async function PortalPage() {
             <SignOutButton />
           </div>
         </div>
+
+        <LogoUploadCard initialLogoUrl={profile?.logo_url ?? null} userId={user.id} />
 
         {openActionItems.length > 0 && (
           <div className="mb-8 border border-zy-electric/30 rounded-lg bg-zy-electric/5 px-6 py-5">

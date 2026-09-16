@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Preview mode is admin-only." }, { status: 403 });
   }
 
-  const { toolName, fieldSchema, submittedData } = await req.json();
+  const { toolName, fieldSchema, submittedData, logoUrl } = await req.json();
   if (!toolName || !fieldSchema) {
     return NextResponse.json({ error: "Missing toolName or fieldSchema." }, { status: 400 });
   }
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       fieldSchema: fieldSchema ?? [],
       submittedData: submittedData ?? {},
       generatedDate,
+      logoUrl: logoUrl ?? null,
     })
   );
 

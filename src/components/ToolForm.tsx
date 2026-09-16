@@ -286,17 +286,51 @@ export default function ToolForm({
             {field.hint && <p className="text-xs text-zy-chrome/60 mb-2">{field.hint}</p>}
             <div className="space-y-2">
               {(values[field.name] ?? []).map((row: Record<string, string>, idx: number) => (
-                <div key={idx} className="flex gap-2 items-center">
-                  {(field.columns ?? []).map((col) => (
-                    <input
-                      key={col}
-                      type="text"
-                      placeholder={col}
-                      value={row[col] ?? ""}
-                      onChange={(e) => updateRow(field.name, idx, col, e.target.value)}
-                      className="flex-1 bg-white/[0.03] border border-white/10 rounded-md p-2 text-sm text-white"
-                    />
-                  ))}
+                <div key={idx} className="flex gap-2 items-center flex-wrap">
+                  {(field.columns ?? []).map((col) => {
+                    const colType = field.column_field_types?.[col];
+                    if (colType?.type === "select" || colType?.type === "select_fixed_plus_custom") {
+                      const isCustom = row[col] === "__custom__";
+                      return (
+                        <div key={col} className="flex-1 min-w-[160px]">
+                          <select
+                            value={row[col] ?? ""}
+                            onChange={(e) => updateRow(field.name, idx, col, e.target.value)}
+                            className="w-full bg-white/[0.03] border border-white/10 rounded-md p-2 text-sm text-white"
+                          >
+                            <option value="" style={{ backgroundColor: "#0A0F2E", color: "#FFFFFF" }}>{col}...</option>
+                            {(colType.options ?? []).map((opt: string) => (
+                              <option key={opt} value={opt} style={{ backgroundColor: "#0A0F2E", color: "#FFFFFF" }}>{opt}</option>
+                            ))}
+                            {colType.type === "select_fixed_plus_custom" && (
+                              <option value="__custom__" style={{ backgroundColor: "#0A0F2E", color: "#FFFFFF" }}>
+                                Other (describe below)
+                              </option>
+                            )}
+                          </select>
+                          {isCustom && (
+                            <input
+                              type="text"
+                              placeholder={colType.note ?? `Describe the custom ${col.toLowerCase()}`}
+                              value={row[`${col}__custom`] ?? ""}
+                              onChange={(e) => updateRow(field.name, idx, `${col}__custom`, e.target.value)}
+                              className="mt-1 w-full bg-white/[0.03] border border-white/10 rounded-md p-2 text-sm text-white"
+                            />
+                          )}
+                        </div>
+                      );
+                    }
+                    return (
+                      <input
+                        key={col}
+                        type="text"
+                        placeholder={col}
+                        value={row[col] ?? ""}
+                        onChange={(e) => updateRow(field.name, idx, col, e.target.value)}
+                        className="flex-1 bg-white/[0.03] border border-white/10 rounded-md p-2 text-sm text-white"
+                      />
+                    );
+                  })}
                   <button
                     type="button"
                     onClick={() => removeRow(field.name, idx)}

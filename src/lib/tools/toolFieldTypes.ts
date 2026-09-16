@@ -1,4 +1,4 @@
-﻿export type ToolField = {
+export type ToolField = {
   name: string;
   label?: string;
   type: string;
@@ -6,6 +6,7 @@
   default?: string;
   required?: boolean;
   columns?: string[];
+  column_field_types?: Record<string, { type: string; options?: string[]; note?: string }>;
   min_rows?: number;
   fields?: ToolField[];
   shown_when?: string;

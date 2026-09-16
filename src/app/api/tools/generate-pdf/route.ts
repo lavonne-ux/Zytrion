@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("contact_name, business_name")
+    .select("contact_name, business_name, logo_url")
     .eq("id", user.id)
     .single();
 
@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
       fieldSchema: tool.field_schema ?? [],
       submittedData: submission.submitted_data ?? {},
       generatedDate,
+      logoUrl: profile?.logo_url ?? null,
     })
   );
 

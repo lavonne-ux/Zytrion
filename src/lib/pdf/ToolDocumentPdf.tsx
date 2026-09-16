@@ -1,9 +1,31 @@
-﻿import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+﻿import { Document, Page, Text, View, StyleSheet, Font, Image } from "@react-pdf/renderer";
+import {
+  OrganizationalResolutionDocument,
+  CompensationDistributionResolutionDocument,
+} from "./ResolutionDocument";
+import { FinancialApprovalThresholdsDocument } from "./ThresholdsDocument";
+
+Font.register({
+  family: "Carlito",
+  fonts: [
+    { src: "./fonts/Carlito-Regular.ttf", fontWeight: "normal", fontStyle: "normal" },
+    { src: "./fonts/Carlito-Bold.ttf", fontWeight: "bold", fontStyle: "normal" },
+    { src: "./fonts/Carlito-Italic.ttf", fontWeight: "normal", fontStyle: "italic" },
+    { src: "./fonts/Carlito-BoldItalic.ttf", fontWeight: "bold", fontStyle: "italic" },
+  ],
+});
+
+// react-pdf's global Font.registerHyphenationCallback does not reach the renderer's
+// internal FontStore instance, so it has no effect here — the fix lives on each
+// Text node below (hyphenationCallback prop) plus left-aligned body text, which
+// removes the width-fitting pressure that forces a hyphen into a name or short
+// word. Do not switch these blocks back to textAlign: "justify" without retesting.
+const noHyphen = (word: string) => [word];
 
 const styles = StyleSheet.create({
   page: {
     padding: 48,
-    fontFamily: "Helvetica",
+    fontFamily: "Carlito",
     fontSize: 11,
     color: "#0A0F2E",
   },
@@ -14,14 +36,25 @@ const styles = StyleSheet.create({
   },
   companyName: {
     fontSize: 10,
-    fontWeight: 700,
+    fontWeight: "bold",
     color: "#0B3DBF",
     letterSpacing: 1,
     marginBottom: 4,
   },
+  letterheadRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  logoImage: {
+    width: 28,
+    height: 28,
+    marginRight: 10,
+    objectFit: "contain",
+  },
   title: {
     fontSize: 18,
-    fontWeight: 700,
+    fontWeight: "bold",
     color: "#0A0F2E",
   },
   meta: {
@@ -34,7 +67,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 9,
-    fontWeight: 700,
+    fontWeight: "bold",
     color: "#666666",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -44,6 +77,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#0A0F2E",
     lineHeight: 1.4,
+    textAlign: "left",
   },
   table: {
     marginTop: 4,
@@ -94,13 +128,25 @@ function formatFieldValue(value: any): string {
   return String(value);
 }
 
-export default function ToolDocumentPdf({
+/**
+ * GENERIC fallback renderer. Still a flat field-by-field layout, not a real
+ * document genre, for every form-type tool that has not yet been given its own
+ * real template below. Upgraded to Carlito, left-aligned, brand-consistent
+ * styling so it is not visually inconsistent with the real instruments, but
+ * this is still fact-sheet output, not a governance instrument. Tracked on
+ * the Roadmap: Authority Matrix, Authority Delegation Memo, Reimbursement
+ * Policy, Role Accountability Standard, Financial Approval Thresholds each
+ * still need their own real document genre, the same way Organizational
+ * Resolution and Compensation and Distribution Resolution now have one.
+ */
+function GenericToolDocument({
   toolName,
   clientName,
   businessName,
   fieldSchema,
   submittedData,
   generatedDate,
+  logoUrl,
 }: {
   toolName: string;
   clientName: string;
@@ -108,25 +154,28 @@ export default function ToolDocumentPdf({
   fieldSchema: { name: string; label?: string; type: string }[];
   submittedData: Record<string, any>;
   generatedDate: string;
+  logoUrl?: string | null;
 }) {
   const displayFields = fieldSchema.filter(
     (f) => f.type !== "generated" || f.name !== "signature"
   );
   const signatureValue = submittedData["signature"];
-
-  // The letterhead belongs to whoever owns this document, the client's own
-  // business, not Zytrion. Zytrion's attribution stays in the footer only,
-  // where it belongs on a tool the platform built for someone else's
-  // governance record.
   const documentOwnerName = businessName || clientName;
 
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.companyName}>{documentOwnerName.toUpperCase()}</Text>
-          <Text style={styles.title}>{toolName}</Text>
-          <Text style={styles.meta}>Generated {generatedDate}</Text>
+          {logoUrl ? (
+            <View style={styles.letterheadRow}>
+              <Image src={logoUrl} style={styles.logoImage} />
+              <Text style={styles.companyName} hyphenationCallback={noHyphen}>{documentOwnerName.toUpperCase()}</Text>
+            </View>
+          ) : (
+            <Text style={styles.companyName} hyphenationCallback={noHyphen}>{documentOwnerName.toUpperCase()}</Text>
+          )}
+          <Text style={styles.title} hyphenationCallback={noHyphen}>{toolName}</Text>
+          <Text style={styles.meta} hyphenationCallback={noHyphen}>Generated {generatedDate}</Text>
         </View>
 
         {displayFields.map((field) => {
@@ -134,12 +183,12 @@ export default function ToolDocumentPdf({
           if (field.type === "repeatable_row" && Array.isArray(value) && value.length > 0) {
             return (
               <View key={field.name} style={styles.fieldBlock}>
-                <Text style={styles.fieldLabel}>{field.label ?? field.name}</Text>
+                <Text style={styles.fieldLabel} hyphenationCallback={noHyphen}>{field.label ?? field.name}</Text>
                 <View style={styles.table}>
                   {value.map((row: Record<string, string>, i: number) => (
                     <View key={i} style={styles.tableRow}>
                       {Object.values(row).map((v, j) => (
-                        <Text key={j} style={styles.tableCell}>{String(v)}</Text>
+                        <Text key={j} style={styles.tableCell} hyphenationCallback={noHyphen}>{String(v)}</Text>
                       ))}
                     </View>
                   ))}
@@ -149,23 +198,73 @@ export default function ToolDocumentPdf({
           }
           return (
             <View key={field.name} style={styles.fieldBlock}>
-              <Text style={styles.fieldLabel}>{field.label ?? field.name}</Text>
-              <Text style={styles.fieldValue}>{formatFieldValue(value)}</Text>
+              <Text style={styles.fieldLabel} hyphenationCallback={noHyphen}>{field.label ?? field.name}</Text>
+              <Text style={styles.fieldValue} hyphenationCallback={noHyphen}>
+                {formatFieldValue(value)}
+              </Text>
             </View>
           );
         })}
 
         {signatureValue && (
           <View style={styles.signatureBlock}>
-            <Text style={styles.signatureLine}>{signatureValue}</Text>
-            <Text style={styles.meta}>Signed and dated {generatedDate}</Text>
+            <Text style={styles.signatureLine} hyphenationCallback={noHyphen}>{signatureValue}</Text>
+            <Text style={styles.meta} hyphenationCallback={noHyphen}>Signed and dated {generatedDate}</Text>
           </View>
         )}
 
-        <Text style={styles.footer}>
+        <Text style={styles.footer} hyphenationCallback={noHyphen}>
           © {new Date().getFullYear()} Zytrion Infrastructure Group, Inc. All rights reserved.
         </Text>
       </Page>
     </Document>
   );
+}
+
+// Tool names route to a real document genre here. Add a new case as each
+// additional form-type tool gets its own real template; anything not listed
+// falls through to the generic renderer above.
+export default function ToolDocumentPdf(props: {
+  toolName: string;
+  clientName: string;
+  businessName: string;
+  fieldSchema: { name: string; label?: string; type: string }[];
+  submittedData: Record<string, any>;
+  generatedDate: string;
+  logoUrl?: string | null;
+}) {
+  switch (props.toolName) {
+    case "Organizational Resolution":
+      return (
+        <OrganizationalResolutionDocument
+          clientName={props.clientName}
+          businessName={props.businessName}
+          submittedData={props.submittedData}
+          generatedDate={props.generatedDate}
+          logoUrl={props.logoUrl}
+        />
+      );
+    case "Compensation and Distribution Resolution":
+      return (
+        <CompensationDistributionResolutionDocument
+          clientName={props.clientName}
+          businessName={props.businessName}
+          submittedData={props.submittedData}
+          generatedDate={props.generatedDate}
+          logoUrl={props.logoUrl}
+        />
+      );
+    case "Financial Approval Thresholds":
+      return (
+        <FinancialApprovalThresholdsDocument
+          clientName={props.clientName}
+          businessName={props.businessName}
+          submittedData={props.submittedData}
+          generatedDate={props.generatedDate}
+          logoUrl={props.logoUrl}
+        />
+      );
+    default:
+      return <GenericToolDocument {...props} />;
+  }
 }
