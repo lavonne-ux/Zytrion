@@ -22,6 +22,15 @@ import path from "path";
  * resolution changes. Throws a clear, specific error naming every path it
  * checked if none exist, rather than the generic ENOENT that gave no
  * indication of the cause.
+ *
+ * The turbopackIgnore comment below opts this dynamic fs.existsSync call
+ * out of Turbopack's automatic file tracing. Without it, Turbopack can't
+ * statically tell which of these candidate paths is actually needed, so
+ * its fallback is to trace and bundle the entire project just to be
+ * safe — real but unnecessary bloat. next.config.js already declares the
+ * font folder explicitly via outputFileTracingIncludes for both PDF
+ * routes, so Turbopack doesn't need to guess here; it can be told to
+ * trust that instead.
  */
 export function loadFont(fileName: string): string {
   const candidates = [
@@ -32,7 +41,7 @@ export function loadFont(fileName: string): string {
   ];
 
   for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
+    if (fs.existsSync(/* turbopackIgnore: true */ candidate)) {
       return candidate;
     }
   }

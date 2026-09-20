@@ -5,6 +5,8 @@ import {
 } from "./ResolutionDocument";
 import { FinancialApprovalThresholdsDocument } from "./ThresholdsDocument";
 import { AuthorityMatrixDocument } from "./AuthorityMatrixDocument";
+import { ReimbursementPolicyDocument } from "./ReimbursementPolicyDocument";
+import { RoleAccountabilityStandardDocument } from "./RoleAccountabilityStandardDocument";
 import { loadFont } from "./loadFont";
 
 Font.register({
@@ -135,12 +137,13 @@ function formatFieldValue(value: any): string {
  * document genre, for every form-type tool that has not yet been given its own
  * real template below. Upgraded to Carlito, left-aligned, brand-consistent
  * styling so it is not visually inconsistent with the real instruments, but
- * this is still fact-sheet output, not a governance instrument. Tracked on
- * the Roadmap: Authority Delegation Memo (no field_schema defined yet —
- * needs one before it can get a real template), Reimbursement Policy, and
- * Role Accountability Standard still need their own real document genre,
- * the same way Organizational Resolution, Compensation and Distribution
- * Resolution, Financial Approval Thresholds, and Authority Matrix now do.
+ * this is still fact-sheet output, not a governance instrument. Only
+ * Authority Delegation Memo still falls through to this generic renderer,
+ * and only because it has no field_schema defined yet in the tools table —
+ * it needs one before it can get a real document genre, the same way
+ * Organizational Resolution, Compensation and Distribution Resolution,
+ * Financial Approval Thresholds, Authority Matrix, Reimbursement Policy,
+ * and Role Accountability Standard now all have.
  */
 function GenericToolDocument({
   toolName,
@@ -273,6 +276,26 @@ export default function ToolDocumentPdf(props: {
           clientName={props.clientName}
           businessName={props.businessName}
           fieldSchema={props.fieldSchema}
+          submittedData={props.submittedData}
+          generatedDate={props.generatedDate}
+          logoUrl={props.logoUrl}
+        />
+      );
+    case "Reimbursement Policy":
+      return (
+        <ReimbursementPolicyDocument
+          clientName={props.clientName}
+          businessName={props.businessName}
+          submittedData={props.submittedData}
+          generatedDate={props.generatedDate}
+          logoUrl={props.logoUrl}
+        />
+      );
+    case "Role Accountability Standard":
+      return (
+        <RoleAccountabilityStandardDocument
+          clientName={props.clientName}
+          businessName={props.businessName}
           submittedData={props.submittedData}
           generatedDate={props.generatedDate}
           logoUrl={props.logoUrl}
