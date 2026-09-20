@@ -4,6 +4,7 @@ import {
   CompensationDistributionResolutionDocument,
 } from "./ResolutionDocument";
 import { FinancialApprovalThresholdsDocument } from "./ThresholdsDocument";
+import { AuthorityMatrixDocument } from "./AuthorityMatrixDocument";
 import { loadFont } from "./loadFont";
 
 Font.register({
@@ -135,10 +136,11 @@ function formatFieldValue(value: any): string {
  * real template below. Upgraded to Carlito, left-aligned, brand-consistent
  * styling so it is not visually inconsistent with the real instruments, but
  * this is still fact-sheet output, not a governance instrument. Tracked on
- * the Roadmap: Authority Matrix, Authority Delegation Memo, Reimbursement
- * Policy, Role Accountability Standard, Financial Approval Thresholds each
- * still need their own real document genre, the same way Organizational
- * Resolution and Compensation and Distribution Resolution now have one.
+ * the Roadmap: Authority Delegation Memo (no field_schema defined yet —
+ * needs one before it can get a real template), Reimbursement Policy, and
+ * Role Accountability Standard still need their own real document genre,
+ * the same way Organizational Resolution, Compensation and Distribution
+ * Resolution, Financial Approval Thresholds, and Authority Matrix now do.
  */
 function GenericToolDocument({
   toolName,
@@ -260,6 +262,17 @@ export default function ToolDocumentPdf(props: {
         <FinancialApprovalThresholdsDocument
           clientName={props.clientName}
           businessName={props.businessName}
+          submittedData={props.submittedData}
+          generatedDate={props.generatedDate}
+          logoUrl={props.logoUrl}
+        />
+      );
+    case "Authority Matrix":
+      return (
+        <AuthorityMatrixDocument
+          clientName={props.clientName}
+          businessName={props.businessName}
+          fieldSchema={props.fieldSchema}
           submittedData={props.submittedData}
           generatedDate={props.generatedDate}
           logoUrl={props.logoUrl}
