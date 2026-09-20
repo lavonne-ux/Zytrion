@@ -4,14 +4,15 @@ import {
   CompensationDistributionResolutionDocument,
 } from "./ResolutionDocument";
 import { FinancialApprovalThresholdsDocument } from "./ThresholdsDocument";
+import { loadFont } from "./loadFont";
 
 Font.register({
   family: "Carlito",
   fonts: [
-    { src: "./fonts/Carlito-Regular.ttf", fontWeight: "normal", fontStyle: "normal" },
-    { src: "./fonts/Carlito-Bold.ttf", fontWeight: "bold", fontStyle: "normal" },
-    { src: "./fonts/Carlito-Italic.ttf", fontWeight: "normal", fontStyle: "italic" },
-    { src: "./fonts/Carlito-BoldItalic.ttf", fontWeight: "bold", fontStyle: "italic" },
+    { src: loadFont("Carlito-Regular.ttf"), fontWeight: "normal", fontStyle: "normal" },
+    { src: loadFont("Carlito-Bold.ttf"), fontWeight: "bold", fontStyle: "normal" },
+    { src: loadFont("Carlito-Italic.ttf"), fontWeight: "normal", fontStyle: "italic" },
+    { src: loadFont("Carlito-BoldItalic.ttf"), fontWeight: "bold", fontStyle: "italic" },
   ],
 });
 
