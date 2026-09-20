@@ -7,6 +7,7 @@ import { FinancialApprovalThresholdsDocument } from "./ThresholdsDocument";
 import { AuthorityMatrixDocument } from "./AuthorityMatrixDocument";
 import { ReimbursementPolicyDocument } from "./ReimbursementPolicyDocument";
 import { RoleAccountabilityStandardDocument } from "./RoleAccountabilityStandardDocument";
+import { AuthorityDelegationMemoDocument } from "./AuthorityDelegationMemoDocument";
 import { loadFont } from "./loadFont";
 
 Font.register({
@@ -137,13 +138,12 @@ function formatFieldValue(value: any): string {
  * document genre, for every form-type tool that has not yet been given its own
  * real template below. Upgraded to Carlito, left-aligned, brand-consistent
  * styling so it is not visually inconsistent with the real instruments, but
- * this is still fact-sheet output, not a governance instrument. Only
- * Authority Delegation Memo still falls through to this generic renderer,
- * and only because it has no field_schema defined yet in the tools table —
- * it needs one before it can get a real document genre, the same way
- * Organizational Resolution, Compensation and Distribution Resolution,
- * Financial Approval Thresholds, Authority Matrix, Reimbursement Policy,
- * and Role Accountability Standard now all have.
+ * this is still fact-sheet output, not a governance instrument. Every
+ * form-type tool now has its own real document genre — Organizational
+ * Resolution, Compensation and Distribution Resolution, Financial Approval
+ * Thresholds, Authority Matrix, Reimbursement Policy, Role Accountability
+ * Standard, and Authority Delegation Memo — so this fallback exists only
+ * for whatever tool gets added next before its own template is built.
  */
 function GenericToolDocument({
   toolName,
@@ -294,6 +294,16 @@ export default function ToolDocumentPdf(props: {
     case "Role Accountability Standard":
       return (
         <RoleAccountabilityStandardDocument
+          clientName={props.clientName}
+          businessName={props.businessName}
+          submittedData={props.submittedData}
+          generatedDate={props.generatedDate}
+          logoUrl={props.logoUrl}
+        />
+      );
+    case "Authority Delegation Memo":
+      return (
+        <AuthorityDelegationMemoDocument
           clientName={props.clientName}
           businessName={props.businessName}
           submittedData={props.submittedData}
