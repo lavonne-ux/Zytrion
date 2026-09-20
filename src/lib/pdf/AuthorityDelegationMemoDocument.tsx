@@ -73,6 +73,11 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 }
 
+function toSentenceFragment(text: string): string {
+  const trimmed = text.trim().replace(/[.\s]+$/, "");
+  return trimmed.charAt(0).toLowerCase() + trimmed.slice(1);
+}
+
 function formatCurrency(value: string | number): string {
   const n = typeof value === "number" ? value : parseFloat(String(value).replace(/[^0-9.-]/g, ""));
   if (isNaN(n)) return String(value);
@@ -163,7 +168,7 @@ export function AuthorityDelegationMemoDocument({
         <Text style={styles.paragraph} hyphenationCallback={noHyphen}>
           This memorandum delegates limited authority to {delegateName || "the delegate named above"} on behalf of{" "}
           {documentOwnerName} (the &quot;Company&quot;), effective as of the date set forth above.
-          {authorityBasis ? " This delegation is issued under " + (authorityBasis.charAt(0).toLowerCase() + authorityBasis.slice(1)) + "." : ""}
+          {authorityBasis ? " This delegation is issued under " + toSentenceFragment(authorityBasis) + "." : ""}
         </Text>
 
         {delegatedAuthority ? (
@@ -192,7 +197,7 @@ export function AuthorityDelegationMemoDocument({
           <View style={{ marginBottom: 14 }}>
             <Text style={styles.sectionLabel} hyphenationCallback={noHyphen}>Exclusions</Text>
             <Text style={styles.paragraph} hyphenationCallback={noHyphen}>
-              This delegation does not authorize {delegateName || "the delegate"} to {exclusions.charAt(0).toLowerCase() + exclusions.slice(1)}
+              This delegation does not authorize {delegateName || "the delegate"} to {toSentenceFragment(exclusions)}.
             </Text>
           </View>
         ) : null}
