@@ -196,9 +196,7 @@ export function AuthorityDelegationMemoDocument({
         {exclusions ? (
           <View style={{ marginBottom: 14 }}>
             <Text style={styles.sectionLabel} hyphenationCallback={noHyphen}>Exclusions</Text>
-            <Text style={styles.paragraph} hyphenationCallback={noHyphen}>
-              This delegation does not authorize {delegateName || "the delegate"} to {toSentenceFragment(exclusions)}.
-            </Text>
+            <Text style={styles.paragraph} hyphenationCallback={noHyphen}>{exclusions}</Text>
           </View>
         ) : null}
 
