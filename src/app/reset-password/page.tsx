@@ -10,12 +10,30 @@ export default function ResetPasswordPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
-    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
+
+    // The reset link is exchanged for a session server-side at
+    // /auth/callback before the visitor ever reaches this page, so a
+    // live session normally already exists by the time this component
+    // mounts. Check for it directly rather than waiting on a client-side
+    // auth event that, under that flow, never fires.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
         setReady(true);
+      }
+      setChecking(false);
+    });
+
+    // Kept as a fallback for links that land here carrying the recovery
+    // token directly (older email templates, or a session established
+    // after this listener attaches).
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
+        setReady(true);
+        setChecking(false);
       }
     });
     return () => {
@@ -51,8 +69,18 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md">
         <h1 className="text-2xl font-semibold mb-2">Choose a new password</h1>
         <p className="text-zy-chrome mb-8">Enter a new password for your account.</p>
-        {!ready && (
+        {checking && (
           <p className="text-sm text-zy-chrome mb-4">Verifying your reset link...</p>
+        )}
+        {!checking && !ready && (
+          <p className="text-sm text-red-400 mb-4">
+            This reset link has expired or was already used. Request a new
+            one from the{" "}
+            <a href="/forgot-password" className="underline hover:text-white">
+              forgot password
+            </a>{" "}
+            page.
+          </p>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

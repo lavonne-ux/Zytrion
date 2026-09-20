@@ -81,7 +81,7 @@ export function FinancialApprovalThresholdsDocument({
   businessName: string;
   submittedData: Record<string, any>;
   generatedDate: string;
-  logoUrl?: string | null;
+  logoUrl?: string | Buffer | null;
 }) {
   const documentOwnerName = businessName || clientName;
   const columns: string[] = ["Amount Range", "Approval Required", "Evidence Required", "Notes"];

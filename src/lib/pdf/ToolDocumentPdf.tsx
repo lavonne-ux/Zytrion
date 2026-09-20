@@ -154,7 +154,7 @@ function GenericToolDocument({
   fieldSchema: { name: string; label?: string; type: string }[];
   submittedData: Record<string, any>;
   generatedDate: string;
-  logoUrl?: string | null;
+  logoUrl?: string | Buffer | null;
 }) {
   const displayFields = fieldSchema.filter(
     (f) => f.type !== "generated" || f.name !== "signature"
@@ -231,7 +231,7 @@ export default function ToolDocumentPdf(props: {
   fieldSchema: { name: string; label?: string; type: string }[];
   submittedData: Record<string, any>;
   generatedDate: string;
-  logoUrl?: string | null;
+  logoUrl?: string | Buffer | null;
 }) {
   switch (props.toolName) {
     case "Organizational Resolution":

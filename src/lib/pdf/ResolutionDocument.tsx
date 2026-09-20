@@ -168,7 +168,7 @@ function formatCurrency(value: string | number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-function Letterhead({ documentOwnerName, logoUrl }: { documentOwnerName: string; logoUrl?: string | null }) {
+function Letterhead({ documentOwnerName, logoUrl }: { documentOwnerName: string; logoUrl?: string | Buffer | null }) {
   return (
     <View>
       {logoUrl ? (
@@ -205,7 +205,7 @@ export function OrganizationalResolutionDocument({
   businessName: string;
   submittedData: Record<string, any>;
   generatedDate: string;
-  logoUrl?: string | null;
+  logoUrl?: string | Buffer | null;
 }) {
   const documentOwnerName = businessName || clientName;
   const entityName = submittedData.entity_legal_name || documentOwnerName;
@@ -290,7 +290,7 @@ export function CompensationDistributionResolutionDocument({
   businessName: string;
   submittedData: Record<string, any>;
   generatedDate: string;
-  logoUrl?: string | null;
+  logoUrl?: string | Buffer | null;
 }) {
   const documentOwnerName = businessName || clientName;
   const method: string = submittedData.method || "";

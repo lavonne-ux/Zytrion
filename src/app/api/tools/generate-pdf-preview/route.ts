@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminStatus } from "@/lib/auth/admin";
 import { renderToBuffer } from "@react-pdf/renderer";
 import ToolDocumentPdf from "@/lib/pdf/ToolDocumentPdf";
+import { normalizeLogo } from "@/lib/pdf/normalizeLogo";
 
 export async function POST(req: NextRequest) {
   const { user, isAdmin } = await getAdminStatus();
@@ -32,27 +33,37 @@ export async function POST(req: NextRequest) {
     day: "numeric",
   });
 
-  const buffer = await renderToBuffer(
-    ToolDocumentPdf({
-      toolName,
-      clientName: "Demonstration Preview",
-      businessName: "",
-      fieldSchema: fieldSchema ?? [],
-      submittedData: submittedData ?? {},
-      generatedDate,
-      logoUrl: logoUrl ?? null,
-    })
-  );
+  const logoBuffer = await normalizeLogo(logoUrl);
 
-  const fileName = `${String(toolName).replace(/[^a-zA-Z0-9]/g, "_")}_preview.pdf`;
+  try {
+    const buffer = await renderToBuffer(
+      ToolDocumentPdf({
+        toolName,
+        clientName: "Demonstration Preview",
+        businessName: "",
+        fieldSchema: fieldSchema ?? [],
+        submittedData: submittedData ?? {},
+        generatedDate,
+        logoUrl: logoBuffer,
+      })
+    );
 
-  return new NextResponse(new Uint8Array(buffer), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      // inline, not attachment: opens straight in a new tab for a live
-      // walkthrough instead of triggering a download dialog mid-demo.
-      "Content-Disposition": `inline; filename="${fileName}"`,
-    },
-  });
+    const fileName = `${String(toolName).replace(/[^a-zA-Z0-9]/g, "_")}_preview.pdf`;
+
+    return new NextResponse(new Uint8Array(buffer), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        // inline, not attachment: opens straight in a new tab for a live
+        // walkthrough instead of triggering a download dialog mid-demo.
+        "Content-Disposition": `inline; filename="${fileName}"`,
+      },
+    });
+  } catch (renderError) {
+    console.error(`Preview PDF generation failed for tool "${toolName}":`, renderError);
+    return NextResponse.json(
+      { error: "This preview could not be generated." },
+      { status: 500 }
+    );
+  }
 }

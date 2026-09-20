@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import ToolDocumentPdf from "@/lib/pdf/ToolDocumentPdf";
+import { normalizeLogo } from "@/lib/pdf/normalizeLogo";
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
@@ -51,25 +52,35 @@ export async function GET(req: NextRequest) {
     day: "numeric",
   });
 
-  const buffer = await renderToBuffer(
-    ToolDocumentPdf({
-      toolName: tool.tool_name,
-      clientName: profile?.contact_name ?? "Client",
-      businessName: profile?.business_name ?? "",
-      fieldSchema: tool.field_schema ?? [],
-      submittedData: submission.submitted_data ?? {},
-      generatedDate,
-      logoUrl: profile?.logo_url ?? null,
-    })
-  );
+  const logoBuffer = await normalizeLogo(profile?.logo_url);
 
-  const fileName = `${tool.tool_name.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
+  try {
+    const buffer = await renderToBuffer(
+      ToolDocumentPdf({
+        toolName: tool.tool_name,
+        clientName: profile?.contact_name ?? "Client",
+        businessName: profile?.business_name ?? "",
+        fieldSchema: tool.field_schema ?? [],
+        submittedData: submission.submitted_data ?? {},
+        generatedDate,
+        logoUrl: logoBuffer,
+      })
+    );
 
-  return new NextResponse(new Uint8Array(buffer), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${fileName}"`,
-    },
-  });
+    const fileName = `${tool.tool_name.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
+
+    return new NextResponse(new Uint8Array(buffer), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+      },
+    });
+  } catch (renderError) {
+    console.error(`PDF generation failed for tool "${tool.tool_name}":`, renderError);
+    return NextResponse.json(
+      { error: "This document could not be generated. Support has the details needed to fix it." },
+      { status: 500 }
+    );
+  }
 }
