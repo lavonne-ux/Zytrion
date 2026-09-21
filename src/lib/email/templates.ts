@@ -269,6 +269,98 @@ export function founderManualPurchasePingEmail(params: FounderManualPurchasePing
   };
 }
 
+export interface ManualPrintOrderReceiptParams {
+  contactName: string;
+  amountCents: number;
+  shippingName: string;
+  addressLine1: string;
+  addressLine2?: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+}
+
+export function manualPrintOrderReceiptEmail(params: ManualPrintOrderReceiptParams): {
+  subject: string;
+  html: string;
+} {
+  const { contactName, amountCents, shippingName, addressLine1, addressLine2, city, state, postalCode } = params;
+  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const body = `
+    <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
+    <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
+      Payment confirmed. Your printed copy of the Zytrion Enterprise in Motion Manual is being prepared for shipment.
+    </p>
+    <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
+      Amount charged: $${amount}
+    </p>
+    <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
+      Shipping to:<br/>
+      ${shippingName}<br/>
+      ${addressLine1}<br/>
+      ${addressLine2 ? `${addressLine2}<br/>` : ""}
+      ${city}, ${state} ${postalCode}
+    </p>
+  `;
+  return {
+    subject: "Your Zytrion Manual Print Order Is Confirmed",
+    html: emailShell(body),
+  };
+}
+
+export interface FounderManualPrintOrderPingParams {
+  contactName: string;
+  contactEmail: string;
+  amountCents: number;
+  shippingName: string;
+  addressLine1: string;
+  addressLine2?: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone?: string | null;
+}
+
+export function founderManualPrintOrderPingEmail(params: FounderManualPrintOrderPingParams): {
+  subject: string;
+  html: string;
+} {
+  const {
+    contactName,
+    contactEmail,
+    amountCents,
+    shippingName,
+    addressLine1,
+    addressLine2,
+    city,
+    state,
+    postalCode,
+    country,
+    phone,
+  } = params;
+  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const html = `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:24px;font-family:Calibri,Arial,sans-serif;background-color:#ffffff;color:#000000;">
+  <p style="font-size:15px;"><strong>Printed Manual order, $${amount}. Ship this one out.</strong></p>
+  <table role="presentation" cellpadding="4" cellspacing="0" style="font-size:14px;">
+    <tr><td><strong>Contact:</strong></td><td>${contactName} (${contactEmail})</td></tr>
+    <tr><td><strong>Ship to:</strong></td><td>${shippingName}</td></tr>
+    <tr><td></td><td>${addressLine1}</td></tr>
+    ${addressLine2 ? `<tr><td></td><td>${addressLine2}</td></tr>` : ""}
+    <tr><td></td><td>${city}, ${state} ${postalCode}</td></tr>
+    <tr><td></td><td>${country}</td></tr>
+    ${phone ? `<tr><td><strong>Phone:</strong></td><td>${phone}</td></tr>` : ""}
+  </table>
+</body>
+</html>`;
+  return {
+    subject: `Printed Manual Order to Ship, ${contactName}`,
+    html,
+  };
+}
+
 export interface PhaseSubmittedForReviewParams {
   contactName: string;
   contactEmail: string;

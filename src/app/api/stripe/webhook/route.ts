@@ -9,6 +9,8 @@ import {
   founderKitPurchasePingEmail,
   manualPurchaseReceiptEmail,
   founderManualPurchasePingEmail,
+  manualPrintOrderReceiptEmail,
+  founderManualPrintOrderPingEmail,
 } from "@/lib/email/templates";
 
 export async function POST(req: Request) {
@@ -262,6 +264,113 @@ export async function POST(req: Request) {
         }
       } catch (err) {
         console.error("Manual purchase confirmation email(s) failed to send:", err);
+      }
+
+      return NextResponse.json({ received: true });
+    }
+
+    // Printed Manual order: a physical good, so this branch does two
+    // things the digital manual purchase above does not, records the
+    // payment in `payments` the same way every other product does, and
+    // writes the actual order record (shipping address, fulfillment
+    // status) to manual_print_orders, since that table is the real
+    // gate for LaVonne knowing what to ship, not the payment row alone.
+    // Stripe address validation already happened client-side in
+    // Checkout (required fields, correct format per country); this is
+    // just persisting what Stripe already collected and verified.
+    if (product === "manual_print" && clientId) {
+      const supabase = createAdminClient();
+      const amountCents = session.amount_total ?? 0;
+      const shipping = session.shipping_details;
+      const address = shipping?.address ?? session.customer_details?.address;
+
+      if (!shipping?.name || !address?.line1 || !address?.city || !address?.postal_code) {
+        console.error(
+          "Printed Manual order completed with an incomplete shipping address on the session.",
+          session.id
+        );
+        return NextResponse.json({ received: true });
+      }
+
+      const { error: paymentError } = await supabase.from("payments").insert({
+        client_id: clientId,
+        product: "Zytrion Enterprise in Motion Manual — Printed Edition",
+        amount_cents: amountCents,
+        status: "succeeded",
+        stripe_reference: session.id,
+      });
+      if (paymentError) {
+        console.error("Printed Manual payment record failed to save:", paymentError.message);
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("contact_name, contact_email")
+        .eq("id", clientId)
+        .single();
+
+      const { error: orderError } = await supabase.from("manual_print_orders").insert({
+        client_id: clientId,
+        contact_name: profile?.contact_name || shipping.name,
+        contact_email: profile?.contact_email || session.customer_details?.email || "",
+        shipping_name: shipping.name,
+        address_line1: address.line1,
+        address_line2: address.line2,
+        city: address.city,
+        state: address.state,
+        postal_code: address.postal_code,
+        country: address.country || "US",
+        phone: session.customer_details?.phone,
+        amount_cents: amountCents,
+        status: "pending_fulfillment",
+        stripe_reference: session.id,
+      });
+      if (orderError) {
+        console.error("Printed Manual order record failed to save:", orderError.message);
+      }
+
+      try {
+        const resend = getResendClient();
+        if (resend && profile?.contact_email) {
+          const receipt = manualPrintOrderReceiptEmail({
+            contactName: profile.contact_name || "there",
+            amountCents,
+            shippingName: shipping.name,
+            addressLine1: address.line1,
+            addressLine2: address.line2,
+            city: address.city,
+            state: address.state || "",
+            postalCode: address.postal_code,
+          });
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: profile.contact_email,
+            subject: receipt.subject,
+            html: receipt.html,
+          });
+
+          const ping = founderManualPrintOrderPingEmail({
+            contactName: profile.contact_name || "Unknown",
+            contactEmail: profile.contact_email,
+            amountCents,
+            shippingName: shipping.name,
+            addressLine1: address.line1,
+            addressLine2: address.line2,
+            city: address.city,
+            state: address.state || "",
+            postalCode: address.postal_code,
+            country: address.country || "US",
+            phone: session.customer_details?.phone,
+          });
+          await resend.emails.send({
+            from: EMAIL_FROM,
+            to: FOUNDER_EMAIL,
+            subject: ping.subject,
+            html: ping.html,
+          });
+        }
+      } catch (err) {
+        console.error("Printed Manual order confirmation email(s) failed to send:", err);
       }
 
       return NextResponse.json({ received: true });

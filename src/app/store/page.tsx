@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import BuyKitButton from "@/components/BuyKitButton";
 import BuyManualButton from "@/components/BuyManualButton";
+import BuyManualPrintButton from "@/components/BuyManualPrintButton";
 
 export default async function StorePage() {
   const supabase = await createClient();
@@ -42,16 +43,22 @@ export default async function StorePage() {
           </p>
           <div className="flex flex-wrap gap-3">
             {user ? (
-              <BuyManualButton label="Get the Manual, $197" />
+              <>
+                <BuyManualButton label="Get the Digital Manual, $197" />
+                <BuyManualPrintButton label="Get the Printed Edition, $397" />
+              </>
             ) : (
               <Link
                 href="/login"
                 className="bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-3 rounded-md text-sm"
               >
-                Get the Manual, $197
+                Get the Manual
               </Link>
             )}
           </div>
+          <p className="text-xs text-zy-chrome/70 mt-3">
+            Printed Edition ships to US addresses only for now, shipping included in the price.
+          </p>
         </div>
 
         <h2 className="text-xl font-semibold text-white mb-6">Implementation Kits</h2>
