@@ -548,12 +548,31 @@ export default async function PortalPage() {
                                 reviewerNotes={phase.reviewerNotes}
                               />
                             </div>
-                          ) : phase.status === "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
-                            <a href={`/api/tools/generate-pdf?kitPhaseId=${phase.id}`}
-                              className="inline-block border border-zy-electric/40 text-zy-electric px-4 py-2 rounded-md text-sm hover:bg-zy-electric/10 transition-colors"
-                            >
-                              Download PDF
-                            </a>
+                          ) : phase.status === "complete" &&
+                            phase.tools?.field_schema &&
+                            ["form", "worksheet", "checklist", "upload"].includes(
+                              phase.tools?.portal_render_type
+                            ) ? (
+                            // A completed phase now offers the record back.
+                            // Only forms used to, which meant a client who
+                            // filled in a nine field worksheet could never
+                            // retrieve it again. The review status sits
+                            // beside it because a submission can now be held
+                            // rather than approved on the spot, and the
+                            // client has to be able to see which.
+                            <div className="space-y-3">
+                              <a href={`/api/tools/generate-pdf?kitPhaseId=${phase.id}`}
+                                className="inline-block border border-zy-electric/40 text-zy-electric px-4 py-2 rounded-md text-sm hover:bg-zy-electric/10 transition-colors"
+                              >
+                                Download PDF
+                              </a>
+                              <PhaseProgressButton
+                                kitPhaseId={phase.id}
+                                status={phase.status}
+                                reviewStatus={phase.reviewStatus}
+                                reviewerNotes={phase.reviewerNotes}
+                              />
+                            </div>
                           ) : (
                             <PhaseProgressButton
                               kitPhaseId={phase.id}

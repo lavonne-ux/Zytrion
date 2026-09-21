@@ -168,6 +168,86 @@ function GenericToolDocument({
   const signatureValue = submittedData["signature"];
   const documentOwnerName = businessName || clientName;
 
+  // Worksheets, checklists and uploads do not save their answers at the top
+  // level the way a form does. They wrap them: a worksheet in entries, a
+  // checklist in items, an upload in sections. Reading them as flat fields
+  // matched nothing, so every value printed as "Not specified" and the
+  // document came out blank. Each shape is rendered on its own terms below.
+  const entries: Record<string, any>[] | null = Array.isArray(submittedData?.entries)
+    ? submittedData.entries
+    : null;
+  const items: Record<string, any>[] | null = Array.isArray(submittedData?.items)
+    ? submittedData.items
+    : null;
+  const sections: Record<string, { fileName?: string }[]> | null =
+    submittedData?.sections && typeof submittedData.sections === "object"
+      ? submittedData.sections
+      : null;
+
+  // The per-row fields, in schema order, with the generated field left out
+  // since it carries the row headings rather than an answer.
+  const rowFields = fieldSchema.filter((f) => f.type !== "generated");
+
+  // A checklist's row headings live on its generated field, so each item can
+  // be printed under the question it answers rather than as "Item 3".
+  const itemHeadings: string[] =
+    (fieldSchema.find(
+      (f: any) => f.type === "generated" && (f.fixed_values || f.fixed_items)
+    ) as any)?.fixed_values ??
+    (fieldSchema.find((f: any) => f.type === "generated" && f.fixed_items) as any)?.fixed_items ??
+    [];
+
+  const structuredBody = (() => {
+    if (items) {
+      return items.map((item, i) => (
+        <View key={i} style={styles.fieldBlock} wrap={false}>
+          <Text style={styles.fieldLabel} hyphenationCallback={noHyphen}>
+            {itemHeadings[i] ?? `Item ${i + 1}`}
+          </Text>
+          {rowFields.map((f) => (
+            <Text key={f.name} style={styles.fieldValue} hyphenationCallback={noHyphen}>
+              {(f.label ?? f.name) + ": " + formatFieldValue(item?.[f.name])}
+            </Text>
+          ))}
+        </View>
+      ));
+    }
+
+    if (entries) {
+      return entries.map((entry, i) => (
+        <View key={i} style={styles.fieldBlock} wrap={false}>
+          <Text style={styles.fieldLabel} hyphenationCallback={noHyphen}>
+            {`Entry ${i + 1}`}
+          </Text>
+          {rowFields.map((f) => (
+            <Text key={f.name} style={styles.fieldValue} hyphenationCallback={noHyphen}>
+              {(f.label ?? f.name) + ": " + formatFieldValue(entry?.[f.name])}
+            </Text>
+          ))}
+        </View>
+      ));
+    }
+
+    if (sections) {
+      return Object.entries(sections).map(([sectionName, files]) => (
+        <View key={sectionName} style={styles.fieldBlock} wrap={false}>
+          <Text style={styles.fieldLabel} hyphenationCallback={noHyphen}>{sectionName}</Text>
+          {Array.isArray(files) && files.length > 0 ? (
+            files.map((file, i) => (
+              <Text key={i} style={styles.fieldValue} hyphenationCallback={noHyphen}>
+                {file?.fileName ?? "Unnamed file"}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.fieldValue} hyphenationCallback={noHyphen}>No file filed</Text>
+          )}
+        </View>
+      ));
+    }
+
+    return null;
+  })();
+
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
@@ -184,7 +264,9 @@ function GenericToolDocument({
           <Text style={styles.meta} hyphenationCallback={noHyphen}>Generated {generatedDate}</Text>
         </View>
 
-        {displayFields.map((field) => {
+        {structuredBody}
+
+        {!structuredBody && displayFields.map((field) => {
           const value = submittedData[field.name];
           if (field.type === "repeatable_row" && Array.isArray(value) && value.length > 0) {
             return (
