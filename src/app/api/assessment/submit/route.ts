@@ -2,8 +2,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { scoreAssessment, Answers } from "@/lib/assessment/scoring";
 import { INSTRUMENT_VERSION } from "@/lib/assessment/statements";
-import { getResendClient, EMAIL_FROM } from "@/lib/email/resend";
-import { tierResultNoticeEmail } from "@/lib/email/templates";
+import { getResendClient, EMAIL_FROM, FOUNDER_EMAIL } from "@/lib/email/resend";
+import { tierResultNoticeEmail, founderAssessmentTakenPingEmail } from "@/lib/email/templates";
 import { TERMS_VERSION } from "@/lib/legal/terms";
 
 interface SubmitBody {
@@ -152,6 +152,41 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("Tier result email failed to send:", err);
+  }
+
+  // Founder notification, did not exist before tonight, so LaVonne was
+  // never told when someone completed the free assessment. Separate
+  // try/catch from the client email above, a failure here must never
+  // block or be blocked by that one. The count is a live query against
+  // assessments, not the cached public stats value (that value has been
+  // observed to go stale), since this number is the real safeguard
+  // ahead of the 1,000 founding-free mark.
+  try {
+    const resend = getResendClient();
+    if (resend) {
+      const { count: assessmentNumber } = await supabase
+        .from("assessments")
+        .select("id", { count: "exact", head: true });
+
+      const { subject, html } = founderAssessmentTakenPingEmail({
+        contactName: body.contactName,
+        businessName: body.contactBusiness || body.contactName,
+        contactEmail: body.contactEmail,
+        contactPhone: body.contactPhone,
+        totalScore: result.totalScore,
+        tierName: result.tierName,
+        resultsUrl: `https://www.getzytrion.com/results/${assessmentId}`,
+        assessmentNumber: assessmentNumber ?? 0,
+      });
+      await resend.emails.send({
+        from: EMAIL_FROM,
+        to: FOUNDER_EMAIL,
+        subject,
+        html,
+      });
+    }
+  } catch (err) {
+    console.error("Founder assessment-taken ping failed to send:", err);
   }
 
   return NextResponse.json({ assessmentId });

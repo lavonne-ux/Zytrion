@@ -361,6 +361,65 @@ export function founderManualPrintOrderPingEmail(params: FounderManualPrintOrder
   };
 }
 
+export interface FounderAssessmentTakenPingParams {
+  contactName: string;
+  businessName: string;
+  contactEmail: string;
+  contactPhone?: string | null;
+  totalScore: number;
+  tierName: string;
+  resultsUrl: string;
+  assessmentNumber: number;
+}
+
+// Every GRID Diagnostic completion pings the founder, this never existed
+// before tonight, so LaVonne had no way to know who took the assessment
+// or how many free completions had accumulated. assessmentNumber is a
+// live count() against the assessments table at submit time, not a
+// cached stats value, since the public founding-period counter has been
+// known to drift stale. The banner below is the actual safeguard for
+// the 1,000-completion founding-free mark: no enforcement exists yet
+// (that's real product design, not a patch), but LaVonne now gets
+// unmissable advance warning starting at #900, well before it matters.
+export function founderAssessmentTakenPingEmail(params: FounderAssessmentTakenPingParams): {
+  subject: string;
+  html: string;
+} {
+  const {
+    contactName,
+    businessName,
+    contactEmail,
+    contactPhone,
+    totalScore,
+    tierName,
+    resultsUrl,
+    assessmentNumber,
+  } = params;
+  const approachingLimit = assessmentNumber >= 900;
+  const warningBanner = approachingLimit
+    ? `<p style="font-size:15px;color:#B00020;"><strong>Approaching the 1,000 founding-free mark, this is completion #${assessmentNumber}.</strong></p>`
+    : "";
+  const html = `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:24px;font-family:Calibri,Arial,sans-serif;background-color:#ffffff;color:#000000;">
+  ${warningBanner}
+  <p style="font-size:15px;">GRID Diagnostic completed, #${assessmentNumber}. Score ${totalScore}, ${tierName}.</p>
+  <table role="presentation" cellpadding="4" cellspacing="0" style="font-size:14px;">
+    <tr><td><strong>Contact:</strong></td><td>${contactName} (${contactEmail})</td></tr>
+    <tr><td><strong>Business:</strong></td><td>${businessName}</td></tr>
+    ${contactPhone ? `<tr><td><strong>Phone:</strong></td><td>${contactPhone}</td></tr>` : ""}
+    <tr><td><strong>Results:</strong></td><td><a href="${resultsUrl}">${resultsUrl}</a></td></tr>
+  </table>
+</body>
+</html>`;
+  return {
+    subject: approachingLimit
+      ? `Approaching 1,000: GRID completion #${assessmentNumber}, ${contactName}`
+      : `GRID Diagnostic Taken (#${assessmentNumber}), ${contactName}`,
+    html,
+  };
+}
+
 export interface PhaseSubmittedForReviewParams {
   contactName: string;
   contactEmail: string;
