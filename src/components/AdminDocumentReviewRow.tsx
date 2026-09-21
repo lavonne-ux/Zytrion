@@ -6,10 +6,12 @@ export default function AdminDocumentReviewRow({
   reviewId,
   sectionName,
   fileName,
+  filePath,
 }: {
   reviewId: string;
   sectionName: string;
   fileName: string;
+  filePath?: string | null;
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -35,7 +37,21 @@ export default function AdminDocumentReviewRow({
       <div className="flex items-center justify-between mb-2">
         <div>
           <p className="text-sm text-white font-medium">{sectionName}</p>
-          <p className="text-xs text-zy-chrome">{fileName}</p>
+          {/* The decision is worthless without the document in front of
+              you, so the file name is the link to the file itself rather
+              than a label describing one you cannot open. */}
+          {filePath ? (
+            <a
+              href={`/api/documents/view?path=${encodeURIComponent(filePath)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-zy-light-blue underline hover:text-white"
+            >
+              {fileName}
+            </a>
+          ) : (
+            <p className="text-xs text-zy-chrome">{fileName}</p>
+          )}
         </div>
         <div className="flex gap-2">
           <button

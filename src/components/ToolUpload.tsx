@@ -138,8 +138,19 @@ export default function ToolUpload({
                   {filled ? `${sectionFiles.length} file(s)` : "Empty"}
                 </span>
               </div>
+              {/* Each uploaded file opens through the documents route, so
+                  the client can check what they actually submitted instead
+                  of trusting a filename they can no longer read. */}
               {sectionFiles.map((f, i) => (
-                <p key={i} className="text-xs text-zy-chrome mb-1">{f.fileName}</p>
+                <a
+                  key={i}
+                  href={`/api/documents/view?path=${encodeURIComponent(f.path)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-xs text-zy-light-blue underline hover:text-white mb-1"
+                >
+                  {f.fileName}
+                </a>
               ))}
               <label className="inline-block mt-1">
                 <span className="text-xs text-zy-light-blue underline cursor-pointer">

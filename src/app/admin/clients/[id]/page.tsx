@@ -24,7 +24,7 @@ export default async function AdminClientPage(props: { params: Promise<{ id: str
 
   const { data: documentReviews } = await admin
     .from("client_document_reviews")
-    .select("id, section_name, file_name, review_status")
+    .select("id, section_name, file_name, file_path, review_status")
     .eq("client_id", id)
     .eq("review_status", "pending")
     .order("section_name");
@@ -78,6 +78,7 @@ export default async function AdminClientPage(props: { params: Promise<{ id: str
                   reviewId={review.id}
                   sectionName={review.section_name}
                   fileName={review.file_name}
+                  filePath={review.file_path}
                 />
               ))}
             </div>
