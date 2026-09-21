@@ -62,12 +62,25 @@ export default async function StorePage(props: {
                 <BuyManualPrintButton label="Get the Printed Edition, $397" />
               </>
             ) : (
-              <Link
-                href="/login"
-                className="bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-3 rounded-md text-sm"
-              >
-                Get the Manual
-              </Link>
+              // Signed out, the price is still shown. Every kit on this page
+              // displays its price to a visitor who has not logged in, and
+              // the Manual was the one product that did not, which read as
+              // unfinished next to six priced items. A prospect should never
+              // have to create an account to find out what something costs.
+              <>
+                <Link
+                  href="/login"
+                  className="bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-3 rounded-md text-sm"
+                >
+                  Get the Digital Manual, $197
+                </Link>
+                <Link
+                  href="/login"
+                  className="border border-white/20 hover:border-white/40 transition-colors text-white font-medium px-6 py-3 rounded-md text-sm"
+                >
+                  Get the Printed Edition, $397
+                </Link>
+              </>
             )}
           </div>
           <p className="text-xs text-zy-chrome/70 mt-3">
