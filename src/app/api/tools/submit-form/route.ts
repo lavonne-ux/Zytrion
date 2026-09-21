@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { completePhase } from "@/lib/portal/completePhase";
 import { flagSubmission, shouldAutoApprove } from "@/lib/tools/reviewFlags";
+import { checkPhaseAccess } from "@/lib/portal/phaseAccess";
 
 function summarize(toolName: string, data: Record<string, any>): string {
   const parts = Object.entries(data)
@@ -28,6 +29,15 @@ export async function POST(req: NextRequest) {
   const { toolId, kitPhaseId, toolName, submittedData, createSectionReviews } = await req.json();
   if (!toolId || !kitPhaseId || !submittedData) {
     return NextResponse.json({ error: "Missing toolId, kitPhaseId, or submittedData." }, { status: 400 });
+  }
+
+  // Enrollment and phase order are checked before anything is written. This
+  // runs first deliberately: a refused submission should leave no trace at
+  // all, not a saved tool submission attached to a phase the client was
+  // never entitled to open.
+  const access = await checkPhaseAccess(user.id, kitPhaseId);
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.error }, { status: access.status });
   }
 
   const { error: submissionError } = await supabase.from("client_tool_submissions").upsert(
@@ -83,7 +93,21 @@ export async function POST(req: NextRequest) {
   // review queue carrying the reasons, so the reviewer opens it already
   // knowing what to look at.
   const flags = flagSubmission({ toolName: toolName ?? "Tool", submittedData });
-  const autoApproved = shouldAutoApprove(flags);
+
+  // One exception, and it matters. Once a human has sent a phase back, every
+  // later submission on that phase returns to that human, whatever the
+  // automatic checks say. A reviewer may have sent it back for a reason no
+  // pattern can detect, and a client should not be able to clear a human
+  // judgement by fixing something mechanical.
+  const { data: priorProgress } = await supabase
+    .from("client_phase_progress")
+    .select("review_status")
+    .eq("client_id", user.id)
+    .eq("kit_phase_id", kitPhaseId)
+    .maybeSingle();
+
+  const wasSentBack = priorProgress?.review_status === "needs_revision";
+  const autoApproved = shouldAutoApprove(flags) && !wasSentBack;
 
   const result = await completePhase({
     userId: user.id,

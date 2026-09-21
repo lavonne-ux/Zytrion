@@ -32,6 +32,10 @@ export async function completePhase(params: {
         flags: reviewFlags ?? [],
       },
       review_status: reviewStatus,
+      // Cleared on every resubmission. The previous reviewer's note applied
+      // to the previous submission, and leaving it attached would show a
+      // client feedback about work they have already replaced.
+      reviewer_notes: null,
     },
     { onConflict: "client_id,kit_phase_id" }
   );
@@ -56,6 +60,32 @@ export async function completePhase(params: {
 
     const isLastPhase = totalPhases != null && phase.phase_number >= totalPhases;
 
+    // Reaching the last phase is not the same as having done the kit. The
+    // submission routes now refuse a phase whose predecessors are
+    // outstanding, so in normal use these two agree, but an enrollment
+    // being marked complete is the single strongest claim this platform
+    // makes about a client and it should not rest on one number. This
+    // counts the finished phases and only closes the enrollment when all
+    // of them are actually there.
+    let allPhasesComplete = false;
+    if (isLastPhase) {
+      const { data: kitPhaseIds } = await admin
+        .from("kit_phases")
+        .select("id")
+        .eq("kit_id", phase.kit_id);
+
+      const ids = (kitPhaseIds ?? []).map((p) => p.id);
+
+      const { count: completedCount } = await admin
+        .from("client_phase_progress")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", userId)
+        .eq("status", "complete")
+        .in("kit_phase_id", ids);
+
+      allPhasesComplete = completedCount != null && completedCount >= ids.length;
+    }
+
     const { data: enrollment } = await admin
       .from("client_kit_enrollments")
       .select("id, current_phase")
@@ -65,11 +95,12 @@ export async function completePhase(params: {
 
     if (enrollment) {
       const nextPhase = Math.max(enrollment.current_phase ?? 1, phase.phase_number + 1);
+      const finished = isLastPhase && allPhasesComplete;
       const { error: enrollError } = await admin
         .from("client_kit_enrollments")
         .update({
           current_phase: isLastPhase ? phase.phase_number : nextPhase,
-          status: isLastPhase ? "complete" : "active",
+          status: finished ? "complete" : "active",
         })
         .eq("id", enrollment.id);
 
