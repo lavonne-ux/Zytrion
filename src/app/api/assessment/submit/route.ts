@@ -6,6 +6,7 @@ import { getResendClient, EMAIL_FROM, FOUNDER_EMAIL } from "@/lib/email/resend";
 import { tierResultNoticeEmail, founderAssessmentTakenPingEmail } from "@/lib/email/templates";
 import { TERMS_VERSION } from "@/lib/legal/terms";
 import { excludeTestAccounts } from "@/lib/assessment/testAccounts";
+import { verifyTurnstile, shouldRejectSubmission } from "@/lib/security/turnstile";
 
 interface SubmitBody {
   contactName: string;
@@ -15,6 +16,7 @@ interface SubmitBody {
   answers: Answers;
   termsAccepted: boolean;
   referredByPartnerId?: string | null;
+  turnstileToken?: string | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -37,6 +39,33 @@ export async function POST(req: NextRequest) {
       { error: "You must agree to the Terms of Use to see your results." },
       { status: 400 }
     );
+  }
+
+  // Bot check, before anything is written. This is the only route on the
+  // platform that accepts work from someone with no account, and each
+  // accepted submission costs roughly fifty rows and two emails.
+  //
+  // The rule is in lib/security/turnstile.ts, including what happens when
+  // Cloudflare cannot be reached. Everything except an actively rejected
+  // token is allowed through today.
+  const forwarded = req.headers.get("x-forwarded-for");
+  const clientIp = forwarded ? forwarded.split(",")[0].trim() : null;
+  const turnstileOutcome = await verifyTurnstile(body.turnstileToken, clientIp);
+
+  if (shouldRejectSubmission(turnstileOutcome)) {
+    return NextResponse.json(
+      {
+        error:
+          "We could not verify that this came from a browser. Please reload the page and try again.",
+      },
+      { status: 403 }
+    );
+  }
+
+  if (turnstileOutcome !== "passed") {
+    // Visible in the Vercel logs, so the real rate of tokenless and
+    // unverifiable submissions is known before the rule is tightened.
+    console.warn(`Assessment submitted with Turnstile outcome: ${turnstileOutcome}`);
   }
 
   let result;

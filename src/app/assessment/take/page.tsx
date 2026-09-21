@@ -1,8 +1,9 @@
 ﻿"use client";
    import Link from "next/link";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import TurnstileWidget from "@/components/TurnstileWidget";
 import { SECTIONS, statementsForSection, Section } from "@/lib/assessment/statements";
 import { AnswerValue, Answers } from "@/lib/assessment/scoring";
 
@@ -25,6 +26,15 @@ export default function TakeAssessment() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Null means either the widget has not finished yet or it could not
+  // load. The submit button is deliberately not gated on this: the server
+  // makes the decision, and a third party failing to load should never
+  // trap someone at the end of a fifteen minute Diagnostic.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const handleToken = useCallback((token: string | null) => {
+    setTurnstileToken(token);
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -70,6 +80,7 @@ export default function TakeAssessment() {
           contactPhone,
           answers,
           termsAccepted: true,
+          turnstileToken,
         }),
       });
       const data = await res.json();
@@ -212,6 +223,8 @@ export default function TakeAssessment() {
               />
               <span>I have read and agree to Zytrion&apos;s <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-zy-light-blue underline hover:text-white">Terms of Use</Link>, including the GRID Restricted Use and Confidentiality section.</span>
             </label>
+
+            <TurnstileWidget onToken={handleToken} />
 
             {error && <p className="mt-4 text-red-400 text-sm">{error}</p>}
 
