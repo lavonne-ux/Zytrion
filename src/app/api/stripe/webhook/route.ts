@@ -281,7 +281,18 @@ export async function POST(req: Request) {
     if (product === "manual_print" && clientId) {
       const supabase = createAdminClient();
       const amountCents = session.amount_total ?? 0;
-      const shipping = session.shipping_details;
+
+      // This account's webhook endpoint is pinned to an API version where
+      // Checkout Session shipping data lives under collected_information
+      // .shipping_details, not the older top-level shipping_details field
+      // the installed Stripe SDK's types still model. Confirmed directly
+      // against a real completed session, the top-level field is simply
+      // absent on this account. Reading both, newer shape first, keeps
+      // this working if the account's pinned version changes again.
+      const collectedShipping = (session as unknown as {
+        collected_information?: { shipping_details?: Stripe.Checkout.Session.ShippingDetails | null };
+      }).collected_information?.shipping_details;
+      const shipping = collectedShipping ?? session.shipping_details;
       const address = shipping?.address ?? session.customer_details?.address;
 
       if (!shipping?.name || !address?.line1 || !address?.city || !address?.postal_code) {
