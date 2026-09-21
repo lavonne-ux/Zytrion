@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSprintBookingEmails } from "@/lib/email/sprintEmails";
 import { isValidEasternSlot, rangesOverlapWithBuffer, BOOKING_DURATIONS, BUFFER_MINUTES } from "@/lib/sprintAvailability";
 import { createCalendarEvent } from "@/lib/calendar/outlookCalendar";
@@ -47,10 +48,17 @@ export async function POST(req: Request) {
 
   const slotEnd = new Date(slotDate.getTime() + durationMinutes * 60000);
 
-  // Real overlap check, buffer-aware, this is the actual guard against
-  // double-booking now, the database unique constraint alone is not
-  // enough once bookings can have a buffer between them.
-  const { data: existing } = await supabase
+  // Buffer-aware overlap check, read through the admin client on purpose.
+  // Through the RLS-bound client this saw only the caller's own bookings,
+  // so it could never detect a clash with another client and two people
+  // could take the same slot. Only times are read, no identities.
+  //
+  // This check enforces the 15 minute buffer and gives a clean message.
+  // It cannot be the only guard, because two requests can both pass it
+  // before either inserts, so the database carries an exclusion constraint
+  // that makes a true overlap impossible. Both are needed.
+  const bookingsView = createAdminClient();
+  const { data: existing } = await bookingsView
     .from("sprint_bookings")
     .select("slot_start, slot_end")
     .eq("status", "confirmed");
@@ -76,7 +84,11 @@ export async function POST(req: Request) {
     .select("id")
     .single();
   if (error) {
-    if (error.code === "23505") {
+    // 23505 is a unique violation, 23P01 an exclusion violation. The second
+    // is what the overlap constraint raises when another booking landed in
+    // the same moment between the check above and this insert. Both mean
+    // the same thing to the person booking.
+    if (error.code === "23505" || error.code === "23P01") {
       return NextResponse.json({ error: "That time was just booked by someone else. Please pick another." }, { status: 409 });
     }
     return NextResponse.json({ error: "Could not create the booking." }, { status: 500 });

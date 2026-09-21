@@ -1,5 +1,5 @@
 ﻿import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { generateCandidateSlots, rangesOverlapWithBuffer, BOOKING_DURATIONS, BUFFER_MINUTES } from "@/lib/sprintAvailability";
 
 export async function GET(req: Request) {
@@ -11,7 +11,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unknown booking type." }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  // Availability is a question about the whole calendar, not about the
+  // caller. Read through the RLS-bound client, the select policy limits
+  // rows to the caller's own bookings, so every other client's booked time
+  // came back looking free and the screen offered slots that were already
+  // taken. Only the start and end times are read here, no client identity
+  // ever leaves this route.
+  const supabase = createAdminClient();
   const candidates = generateCandidateSlots(durationMinutes);
   const rangeStart = candidates[0]?.toISOString();
   const lastCandidateEnd = candidates.length
