@@ -70,6 +70,31 @@ export default async function PortalPage() {
   const openActionItems = (actionItems ?? []).filter((a) => a.status !== "complete");
   const completedActionItems = (actionItems ?? []).filter((a) => a.status === "complete");
 
+  // The Manual purchase, digital and printed are two separate products, a
+  // client may have bought either, both, or neither. Digital confirms
+  // through a succeeded payments row and links straight to the watermarked
+  // download route, which re-checks this same payment itself. Printed
+  // confirms through its own order table and shows fulfillment status,
+  // there is nothing to download, the physical copy ships to the address
+  // collected at checkout.
+  const { data: manualPurchase } = await supabase
+    .from("payments")
+    .select("id, created_at")
+    .eq("client_id", user.id)
+    .eq("product", "Zytrion Enterprise in Motion Manual")
+    .eq("status", "succeeded")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: manualPrintOrder } = await supabase
+    .from("manual_print_orders")
+    .select("id, status, created_at")
+    .eq("client_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const { data: enrollments } = await supabase
     .from("client_kit_enrollments")
     .select("id, kit_id, status, current_phase, started_at, kits ( title, kit_type )")
@@ -214,6 +239,56 @@ export default async function PortalPage() {
                 </div>
               </details>
             )}
+          </div>
+        )}
+
+        {(manualPurchase || manualPrintOrder) && (
+          <div className="mb-8 border border-white/10 rounded-lg bg-white/[0.02] px-6 py-5">
+            <h2 className="text-lg font-semibold text-white mb-4">Your Manual</h2>
+            <div className="space-y-3">
+              {manualPurchase && (
+                <div className="flex flex-wrap items-center justify-between gap-3 border border-white/10 rounded-lg p-4 bg-white/[0.02]">
+                  <div>
+                    <p className="text-white font-medium text-sm">
+                      Zytrion Enterprise in Motion Manual, Digital Edition
+                    </p>
+                    <p className="text-xs text-zy-chrome mt-1">
+                      Purchased{" "}
+                      {new Date(manualPurchase.created_at).toLocaleDateString(undefined, {
+                        year: "numeric", month: "long", day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                  <a
+                    href="/api/manual/download"
+                    className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-5 py-2.5 rounded-md text-sm"
+                  >
+                    Download Your Manual
+                  </a>
+                </div>
+              )}
+              {manualPrintOrder && (
+                <div className="border border-white/10 rounded-lg p-4 bg-white/[0.02]">
+                  <p className="text-white font-medium text-sm">
+                    Zytrion Enterprise in Motion Manual, Printed Edition
+                  </p>
+                  <p className="text-xs text-zy-chrome mt-1">
+                    Ordered{" "}
+                    {new Date(manualPrintOrder.created_at).toLocaleDateString(undefined, {
+                      year: "numeric", month: "long", day: "numeric",
+                    })}
+                    {", "}
+                    {manualPrintOrder.status === "pending_fulfillment"
+                      ? "preparing for shipment"
+                      : manualPrintOrder.status === "shipped"
+                      ? "shipped"
+                      : manualPrintOrder.status === "delivered"
+                      ? "delivered"
+                      : manualPrintOrder.status}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
