@@ -464,6 +464,23 @@ export default async function PortalPage() {
                               )}
                             </div>
                           )}
+                          {/* When a phase comes back for revision the client
+                              needs the reason in front of them while they fix
+                              it, not underneath the form. */}
+                          {!isAdminPreview && phase.reviewStatus === "needs_revision" && (
+                            <div className="border border-amber-500/40 bg-amber-500/5 rounded-md p-4 mb-4">
+                              <p className="text-xs text-amber-400 uppercase tracking-wide mb-1">
+                                Sent back for revision
+                              </p>
+                              {phase.reviewerNotes ? (
+                                <p className="text-sm text-amber-100/90">{phase.reviewerNotes}</p>
+                              ) : (
+                                <p className="text-sm text-amber-100/90">
+                                  Your advisor asked for changes to this phase. Update your answers below and submit again.
+                                </p>
+                              )}
+                            </div>
+                          )}
                           {isAdminPreview && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
                             <ToolForm
                               toolId={phase.tools.id}
@@ -479,7 +496,7 @@ export default async function PortalPage() {
                                 yet, showing structure only, not the live interactive version.
                               </p>
                             </div>
-                          ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
+                          ) : (phase.status !== "complete" || phase.reviewStatus === "needs_revision") && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
                             <ToolForm
                               toolId={phase.tools.id}
                               kitPhaseId={phase.id}
@@ -506,21 +523,21 @@ export default async function PortalPage() {
                                 reviewerNotes={phase.reviewerNotes}
                               />
                             </div>
-                          ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "worksheet" ? (
+                          ) : (phase.status !== "complete" || phase.reviewStatus === "needs_revision") && phase.tools?.field_schema && phase.tools?.portal_render_type === "worksheet" ? (
                             <ToolWorksheet
                               toolId={phase.tools.id}
                               kitPhaseId={phase.id}
                               toolName={phase.tools.tool_name}
                               fieldSchema={phase.tools.field_schema}
                             />
-                          ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "upload" ? (
+                          ) : (phase.status !== "complete" || phase.reviewStatus === "needs_revision") && phase.tools?.field_schema && phase.tools?.portal_render_type === "upload" ? (
                             <ToolUpload
                               toolId={phase.tools.id}
                               kitPhaseId={phase.id}
                               toolName={phase.tools.tool_name}
                               sections={(phase.tools.field_schema.find((f: any) => f.sections)?.sections) ?? []}
                             />
-                          ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "checklist" ? (
+                          ) : (phase.status !== "complete" || phase.reviewStatus === "needs_revision") && phase.tools?.field_schema && phase.tools?.portal_render_type === "checklist" ? (
                             <ToolChecklist
                               toolId={phase.tools.id}
                               kitPhaseId={phase.id}
