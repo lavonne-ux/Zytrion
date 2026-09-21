@@ -3,8 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import BuyKitButton from "@/components/BuyKitButton";
 import BuyManualButton from "@/components/BuyManualButton";
 import BuyManualPrintButton from "@/components/BuyManualPrintButton";
+import StatusBanner, { BANNERS } from "@/components/StatusBanner";
 
-export default async function StorePage() {
+export default async function StorePage(props: {
+  searchParams: Promise<{ purchase?: string }>;
+}) {
+  const sp = await props.searchParams;
+  const cancelled = sp.purchase === "cancelled";
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -18,6 +24,14 @@ export default async function StorePage() {
   return (
     <main className="min-h-screen bg-zy-near-black text-white">
       <div className="max-w-2xl mx-auto px-6 py-16">
+        {cancelled && (
+          <StatusBanner
+            tone={BANNERS.purchase_cancelled.tone}
+            title={BANNERS.purchase_cancelled.title}
+            message={BANNERS.purchase_cancelled.message}
+          />
+        )}
+
         <p className="text-zy-light-blue text-lg font-bold tracking-wide uppercase mb-3">
           The Zytrion Store
         </p>

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import PrintButton from "./PrintButton";
 import FullReportButton from "./FullReportButton";
+import StatusBanner, { BANNERS } from "@/components/StatusBanner";
 import { PILLAR_DESCRIPTIONS } from "@/lib/assessment/pillarDescriptions";
 import { assembleFullReport } from "@/lib/assessment/fullReportContentBank";
 import Stripe from "stripe";
@@ -91,6 +92,10 @@ export default async function ResultsPage(
   const initiallyPaid = Boolean(assessment.full_report_paid_at);
   const alreadyPaid = await verifyPaymentIfNeeded(assessment.id, searchParams.session_id, initiallyPaid);
   const justPaid = searchParams.report === "paid";
+  // Someone who backed out of the Full Report checkout was returned here
+  // with no acknowledgement at all, which reads as though the payment
+  // silently failed.
+  const checkoutCancelled = searchParams.report === "cancelled";
 
   // Full Report content, assembled only when unlocked. Uses the same
   // pillarScores and tier already fetched above, no second query, no
@@ -130,6 +135,16 @@ export default async function ResultsPage(
             <p className="text-sm text-white">
               Payment confirmed. Your Full Report is unlocked below.
             </p>
+          </div>
+        )}
+
+        {checkoutCancelled && (
+          <div className="print:hidden">
+            <StatusBanner
+              tone={BANNERS.report_cancelled.tone}
+              title={BANNERS.report_cancelled.title}
+              message={BANNERS.report_cancelled.message}
+            />
           </div>
         )}
 

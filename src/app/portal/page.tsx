@@ -17,6 +17,7 @@ import ToolLog from "@/components/ToolLog";
 import FinancialTraceabilityWorksheet from "@/components/FinancialTraceabilityWorksheet";
 import ActionItemCheckbox from "@/components/ActionItemCheckbox";
 import LogoUploadCard from "@/components/LogoUploadCard";
+import StatusBanner, { BANNERS } from "@/components/StatusBanner";
 
 type PhaseStatus = "not_started" | "in_progress" | "complete";
 type ReviewStatus = "pending" | "approved" | "needs_revision";
@@ -37,7 +38,24 @@ type PhaseWithProgress = {
 
 const BOOKABLE_KIT_TYPES = ["sprint", "consultation"];
 
-export default async function PortalPage() {
+export default async function PortalPage(props: {
+  searchParams: Promise<{ manual?: string; manual_print?: string; enrolled?: string; purchase?: string }>;
+}) {
+  // Checkout sends people back here with a parameter saying how it went.
+  // Until now nothing read them, so a completed purchase and an abandoned
+  // one looked identical on arrival.
+  const sp = await props.searchParams;
+  const banner =
+    sp.purchase === "cancelled"
+      ? BANNERS.purchase_cancelled
+      : sp.manual === "1"
+      ? BANNERS.manual_purchased
+      : sp.manual_print === "1"
+      ? BANNERS.manual_print_ordered
+      : sp.enrolled === "1"
+      ? BANNERS.enrolled
+      : null;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -224,6 +242,10 @@ export default async function PortalPage() {
             <SignOutButton />
           </div>
         </div>
+
+        {banner && (
+          <StatusBanner tone={banner.tone} title={banner.title} message={banner.message} />
+        )}
 
         <LogoUploadCard initialLogoUrl={profile?.logo_url ?? null} userId={user.id} />
 

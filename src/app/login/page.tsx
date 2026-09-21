@@ -1,9 +1,32 @@
 ﻿"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import StatusBanner, { BANNERS } from "@/components/StatusBanner";
+
+// useSearchParams needs a Suspense boundary, so the form lives in an inner
+// component and the page itself is the boundary.
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams();
+  // The auth callback redirects here with ?error=auth when a sign-in link
+  // fails, and checkout redirects here with ?enrolled=1 when someone bought
+  // a kit while signed out. Neither was read, so both arrived as a blank
+  // login form and the person was left guessing.
+  const banner =
+    searchParams.get("error") === "auth"
+      ? BANNERS.auth_error
+      : searchParams.get("enrolled") === "1"
+      ? BANNERS.enrolled_login
+      : null;
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,6 +56,9 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-zy-near-black text-white flex items-center justify-center px-6 py-20">
       <div className="w-full max-w-md">
+        {banner && (
+          <StatusBanner tone={banner.tone} title={banner.title} message={banner.message} />
+        )}
         <h1 className="text-2xl font-semibold mb-2">Log in</h1>
         <p className="text-zy-chrome mb-8">Access your Zytrion Client Portal.</p>
         <form onSubmit={handleSubmit} className="space-y-4">
