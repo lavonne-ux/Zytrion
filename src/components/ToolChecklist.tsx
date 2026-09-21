@@ -35,6 +35,9 @@ export default function ToolChecklist({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Whether the server approved this on submission or held it for review.
+  // The screen says which, instead of promising a review either way.
+  const [autoApproved, setAutoApproved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,7 +77,6 @@ export default function ToolChecklist({
           kitPhaseId,
           toolName,
           submittedData: { items },
-          autoApprove: true,
         }),
       });
       const data = await res.json();
@@ -83,6 +85,7 @@ export default function ToolChecklist({
         setSaving(false);
         return;
       }
+      setAutoApproved(Boolean(data?.autoApproved));
       setDone(true);
       router.refresh();
     } catch {
@@ -142,6 +145,11 @@ export default function ToolChecklist({
     return (
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} submitted.</p>
+        <p className="text-sm text-zy-chrome mt-1">
+          {autoApproved
+            ? "The automatic checks passed, this phase is approved."
+            : "Held for advisor review, you will hear back with a decision."}
+        </p>
       </div>
     );
   }

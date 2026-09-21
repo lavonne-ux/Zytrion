@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { completePhase } from "@/lib/portal/completePhase";
+import { flagSubmission, shouldAutoApprove } from "@/lib/tools/reviewFlags";
 
 function summarize(toolName: string, data: Record<string, any>): string {
   const parts = Object.entries(data)
@@ -19,7 +20,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
   }
 
-  const { toolId, kitPhaseId, toolName, submittedData, autoApprove, createSectionReviews } = await req.json();
+  // autoApprove is deliberately not read from the request any more. It used
+  // to arrive from the browser and was written straight into the review
+  // status, which meant a client decided whether their own work needed
+  // reviewing. The decision is made below, on the server, from the content
+  // of the submission itself.
+  const { toolId, kitPhaseId, toolName, submittedData, createSectionReviews } = await req.json();
   if (!toolId || !kitPhaseId || !submittedData) {
     return NextResponse.json({ error: "Missing toolId, kitPhaseId, or submittedData." }, { status: 400 });
   }
@@ -71,19 +77,31 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Forms and worksheets: completeness is the gate, not a human review.
-  // Governance Binder: phase-level status still tracks as pending until
-  // every individual section above is approved.
+  // Automatic triage. A submission that trips none of the documented
+  // failure patterns is approved on the spot, so a reviewer's time is spent
+  // only on work that actually needs a person. Anything flagged goes to the
+  // review queue carrying the reasons, so the reviewer opens it already
+  // knowing what to look at.
+  const flags = flagSubmission({ toolName: toolName ?? "Tool", submittedData });
+  const autoApproved = shouldAutoApprove(flags);
+
   const result = await completePhase({
     userId: user.id,
     kitPhaseId,
     evidenceNote: summarize(toolName ?? "Tool", submittedData),
-    reviewStatus: autoApprove ? "approved" : "pending",
+    reviewStatus: autoApproved ? "approved" : "pending",
+    reviewFlags: flags,
   });
 
   if (!result.success) {
     return NextResponse.json({ error: "Saved, but could not update phase status.", detail: result.error }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true });
+  // The client is told plainly which way it went, so the screen can stop
+  // promising a review that is not going to happen.
+  return NextResponse.json({
+    success: true,
+    autoApproved,
+    flagCount: flags.length,
+  });
 }

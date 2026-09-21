@@ -12,17 +12,25 @@ export async function completePhase(params: {
   kitPhaseId: string;
   evidenceNote: string;
   reviewStatus?: "pending" | "approved";
+  reviewFlags?: { code: string; message: string }[];
 }) {
-  const { userId, kitPhaseId, evidenceNote, reviewStatus = "pending" } = params;
+  const { userId, kitPhaseId, evidenceNote, reviewStatus = "pending", reviewFlags } = params;
   const supabase = await createClient();
 
+  // The flags travel with the evidence rather than in a column of their
+  // own, so the reviewer sees why a submission was held at the moment they
+  // open it, and an approved one records that nothing tripped.
   const { error: progressError } = await supabase.from("client_phase_progress").upsert(
     {
       client_id: userId,
       kit_phase_id: kitPhaseId,
       status: "complete",
       completed_at: new Date().toISOString(),
-      evidence_artifact_ref: { note: evidenceNote.trim(), submitted_at: new Date().toISOString() },
+      evidence_artifact_ref: {
+        note: evidenceNote.trim(),
+        submitted_at: new Date().toISOString(),
+        flags: reviewFlags ?? [],
+      },
       review_status: reviewStatus,
     },
     { onConflict: "client_id,kit_phase_id" }

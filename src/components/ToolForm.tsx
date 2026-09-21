@@ -25,6 +25,9 @@ export default function ToolForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Whether the server approved this on submission or held it for review.
+  // The screen says which, instead of promising a review either way.
+  const [autoApproved, setAutoApproved] = useState(false);
 
   useEffect(() => {
     // Demo mode never has a real saved submission to preload, skip the fetch.
@@ -108,7 +111,7 @@ export default function ToolForm({
       const res = await fetch("/api/tools/submit-form", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toolId, kitPhaseId, toolName, submittedData: values, autoApprove: true }),
+        body: JSON.stringify({ toolId, kitPhaseId, toolName, submittedData: values }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -116,6 +119,7 @@ export default function ToolForm({
         setSaving(false);
         return;
       }
+      setAutoApproved(Boolean(data?.autoApproved));
       setDone(true);
       router.refresh();
     } catch {
@@ -370,7 +374,11 @@ export default function ToolForm({
     return (
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} submitted.</p>
-        <p className="text-sm text-zy-chrome mt-1 mb-4">Your record has been saved.</p>
+        <p className="text-sm text-zy-chrome mt-1 mb-4">
+          {autoApproved
+            ? "Your record has been saved and the automatic checks passed."
+            : "Your record has been saved. Held for advisor review, you will hear back with a decision."}
+        </p>
         <a href={`/api/tools/generate-pdf?kitPhaseId=${kitPhaseId}`} className="inline-block bg-zy-electric hover:bg-zy-royal transition-colors text-white font-medium px-6 py-2.5 rounded-md text-sm">
           Download PDF
         </a>

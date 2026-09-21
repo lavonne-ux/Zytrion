@@ -199,6 +199,25 @@ export default async function AdminPage() {
                   <p className="text-sm text-zy-chrome mb-3">
                     {item.profiles?.contact_name} ({item.profiles?.contact_email})
                   </p>
+                  {/* Why this one is in front of you. A submission reaches
+                      this queue only because it tripped a check, so the
+                      reasons lead rather than sit underneath the evidence. */}
+                  {Array.isArray(item.evidence_artifact_ref?.flags) &&
+                    item.evidence_artifact_ref.flags.length > 0 && (
+                      <div className="border border-amber-500/30 rounded-md p-4 bg-amber-500/5 mb-3">
+                        <p className="text-xs text-amber-400 uppercase tracking-wide mb-2">
+                          Held for review, {item.evidence_artifact_ref.flags.length} reason
+                          {item.evidence_artifact_ref.flags.length === 1 ? "" : "s"}
+                        </p>
+                        <ul className="space-y-1">
+                          {item.evidence_artifact_ref.flags.map((flag: any, i: number) => (
+                            <li key={i} className="text-sm text-amber-200/90">
+                              {flag.message}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   <div className="border border-white/10 rounded-md p-4 bg-white/[0.02]">
                     <p className="text-xs text-zy-chrome/70 uppercase tracking-wide mb-1">
                       Submitted Evidence

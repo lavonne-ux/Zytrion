@@ -42,6 +42,9 @@ export default function ToolWorksheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Whether the server approved this on submission or held it for review.
+  // The screen says which, instead of promising a review either way.
+  const [autoApproved, setAutoApproved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,7 +112,7 @@ export default function ToolWorksheet({
       const res = await fetch("/api/tools/submit-form", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toolId, kitPhaseId, toolName, submittedData: { entries: toSave }, autoApprove: true }),
+        body: JSON.stringify({ toolId, kitPhaseId, toolName, submittedData: { entries: toSave } }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -117,6 +120,7 @@ export default function ToolWorksheet({
         setSaving(false);
         return;
       }
+      setAutoApproved(Boolean(data?.autoApproved));
       setDone(true);
       router.refresh();
     } catch {
@@ -246,7 +250,11 @@ export default function ToolWorksheet({
     return (
       <div className="border border-zy-electric rounded-lg p-6 bg-zy-electric/10">
         <p className="text-white font-medium">{toolName} saved.</p>
-        <p className="text-sm text-zy-chrome mt-1">Your advisor will review it shortly.</p>
+        <p className="text-sm text-zy-chrome mt-1">
+          {autoApproved
+            ? "The automatic checks passed, this phase is approved."
+            : "Held for advisor review, you will hear back with a decision."}
+        </p>
       </div>
     );
   }
