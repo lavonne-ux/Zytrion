@@ -1,5 +1,21 @@
 name: Refresh Zytrion Stats
 
+# Refreshes the public proof numbers on the homepage, hourly.
+#
+# This job went silent for a month between 20 August and 21 September 2026
+# without anyone noticing. The secret stored here had drifted apart from the
+# one in Vercel, so every call came back 401 Unauthorized and nothing was
+# ever written. The run still reported success, because plain curl treats an
+# HTTP error as a perfectly good response and exits zero.
+#
+# --fail is what prevents that happening again: curl now exits non-zero on
+# any 4xx or 5xx, so a rejected call shows up as a failed run rather than a
+# green tick over a dead job.
+#
+# If this starts failing with 401, the fix is almost always that
+# STATS_REFRESH_SECRET here no longer matches the one in Vercel. They are
+# two separate stores and both have to carry the same value.
+
 on:
   schedule:
     - cron: "0 * * * *"
@@ -11,4 +27,6 @@ jobs:
     steps:
       - name: Call the stats refresh endpoint
         run: |
-          curl -s -w "\nHTTP Status: %{http_code}\n" "https://www.getzytrion.com/api/cron/refresh-stats?secret=${{ secrets.STATS_REFRESH_SECRET }}"
+          curl --fail --silent --show-error \
+            -w "\nHTTP Status: %{http_code}\n" \
+            "https://www.getzytrion.com/api/cron/refresh-stats?secret=${{ secrets.STATS_REFRESH_SECRET }}"
