@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import { excludeTestAccounts } from "@/lib/assessment/testAccounts";
 
 // Refreshes public_proof_stats for the homepage stat strip and founder
 // count. Triggered by an external scheduler (not Vercel's built-in cron,
@@ -17,17 +18,20 @@ export async function GET(req: Request) {
 
   const supabase = createAdminClient();
 
-  const { count: assessmentsCompleted, error: countError } = await supabase
-    .from("assessments")
-    .select("*", { count: "exact", head: true });
+  // Both figures are public proof, so both exclude the internal test
+  // account. Without this the homepage reports the founder's own end to
+  // end test runs as completed client diagnostics.
+  const { count: assessmentsCompleted, error: countError } = await excludeTestAccounts(
+    supabase.from("assessments").select("*", { count: "exact", head: true })
+  );
 
   if (countError) {
     return NextResponse.json({ error: countError.message }, { status: 500 });
   }
 
-  const { data: scoreRows, error: scoreError } = await supabase
-    .from("assessments")
-    .select("total_score");
+  const { data: scoreRows, error: scoreError } = await excludeTestAccounts(
+    supabase.from("assessments").select("total_score")
+  );
 
   if (scoreError) {
     return NextResponse.json({ error: scoreError.message }, { status: 500 });

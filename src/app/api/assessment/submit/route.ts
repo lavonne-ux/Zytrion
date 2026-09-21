@@ -5,6 +5,7 @@ import { INSTRUMENT_VERSION } from "@/lib/assessment/statements";
 import { getResendClient, EMAIL_FROM, FOUNDER_EMAIL } from "@/lib/email/resend";
 import { tierResultNoticeEmail, founderAssessmentTakenPingEmail } from "@/lib/email/templates";
 import { TERMS_VERSION } from "@/lib/legal/terms";
+import { excludeTestAccounts } from "@/lib/assessment/testAccounts";
 
 interface SubmitBody {
   contactName: string;
@@ -164,9 +165,12 @@ export async function POST(req: NextRequest) {
   try {
     const resend = getResendClient();
     if (resend) {
-      const { count: assessmentNumber } = await supabase
-        .from("assessments")
-        .select("id", { count: "exact", head: true });
+      // Excludes the internal test account, so this number is the count of
+      // real client diagnostics and stays aligned with the public figure
+      // and with the 1,000 founding-free tracking.
+      const { count: assessmentNumber } = await excludeTestAccounts(
+        supabase.from("assessments").select("id", { count: "exact", head: true })
+      );
 
       const { subject, html } = founderAssessmentTakenPingEmail({
         contactName: body.contactName,
