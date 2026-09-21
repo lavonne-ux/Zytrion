@@ -1,4 +1,4 @@
-﻿const BRAND = {
+const BRAND = {
   nearBlack: "#080C1A",
   chrome: "#C7CDD6",
   electric: "#1565FF",
@@ -51,6 +51,19 @@ function emailShell(bodyHtml: string): string {
   </table>
 </body>
 </html>`;
+}
+
+// One definition of how money is rendered, so a change to the format does
+// not have to be found in six places.
+function formatAmount(amountCents: number): string {
+  return (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+}
+
+// A fully discounted order is a comp, not a charge. Printing
+// "Amount charged: $0.00" reads like a billing error to the client and like
+// lost revenue in the founder notification, so both say plainly what it was.
+function chargeLine(amountCents: number, compText: string): string {
+  return amountCents > 0 ? `Amount charged: $${formatAmount(amountCents)}` : compText;
 }
 
 function button(label: string, url: string): string {
@@ -109,11 +122,7 @@ export function paymentReceiptEmail(params: PaymentReceiptParams): {
   html: string;
 } {
   const { contactName, businessName, resultsUrl, amountCents } = params;
-  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
-  // A zero total is a comp, not a charge, so it says so rather than
-  // reporting "Amount charged: $0.00".
-  const amountLine =
-    amountCents > 0 ? `Amount charged: $${amount}` : "Complimentary access, no charge.";
+  const amountLine = chargeLine(amountCents, "Complimentary access, no charge.");
   const body = `
     <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
@@ -148,12 +157,9 @@ export function founderPurchasePingEmail(params: FounderPurchasePingParams): {
   html: string;
 } {
   const { businessName, contactName, contactEmail, totalScore, tierName, resultsUrl, amountCents } = params;
-  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
-  // Says plainly when a purchase was comped, so the founder notification
-  // is never mistaken for revenue that did not arrive.
   const headline =
     amountCents > 0
-      ? `Full Report purchased, $${amount}.`
+      ? `Full Report purchased, $${formatAmount(amountCents)}.`
       : "Full Report unlocked on a full discount code, no revenue.";
   const html = `<!DOCTYPE html>
 <html>
@@ -186,14 +192,13 @@ export function kitPurchaseReceiptEmail(params: KitPurchaseReceiptParams): {
   html: string;
 } {
   const { contactName, kitTitle, amountCents, portalUrl } = params;
-  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
   const body = `
     <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
-      Payment confirmed. You are enrolled in the ${kitTitle}, and it is waiting for you inside your Zytrion Client Portal right now.
+      ${amountCents > 0 ? "Payment confirmed." : "Enrollment confirmed."} You are enrolled in the ${kitTitle}, and it is waiting for you inside your Zytrion Client Portal right now.
     </p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
-      Amount charged: $${amount}
+      ${chargeLine(amountCents, "Complimentary enrollment, no charge.")}
     </p>
     ${button("Go to Your Client Portal", portalUrl)}
   `;
@@ -216,11 +221,14 @@ export function founderKitPurchasePingEmail(params: FounderKitPurchasePingParams
   html: string;
 } {
   const { businessName, contactName, contactEmail, kitTitle, amountCents } = params;
-  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const headline =
+    amountCents > 0
+      ? `${kitTitle} purchased, $${formatAmount(amountCents)}.`
+      : `${kitTitle} enrolled on a full discount code, no revenue.`;
   const html = `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:24px;font-family:Calibri,Arial,sans-serif;background-color:#ffffff;color:#000000;">
-  <p style="font-size:15px;">${kitTitle} purchased, $${amount}.</p>
+  <p style="font-size:15px;">${headline}</p>
   <table role="presentation" cellpadding="4" cellspacing="0" style="font-size:14px;">
     <tr><td><strong>Business:</strong></td><td>${businessName}</td></tr>
     <tr><td><strong>Contact:</strong></td><td>${contactName} (${contactEmail})</td></tr>
@@ -244,14 +252,13 @@ export function manualPurchaseReceiptEmail(params: ManualPurchaseReceiptParams):
   html: string;
 } {
   const { contactName, amountCents, portalUrl } = params;
-  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
   const body = `
     <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
-      Payment confirmed. Your copy of the Zytrion Enterprise in Motion Manual is ready to download inside your Client Portal.
+      ${amountCents > 0 ? "Payment confirmed." : "Your access is confirmed."} Your copy of the Zytrion Enterprise in Motion Manual is ready to download inside your Client Portal.
     </p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
-      Amount charged: $${amount}
+      ${chargeLine(amountCents, "Complimentary copy, no charge.")}
     </p>
     ${button("Go to Your Client Portal", portalUrl)}
   `;
@@ -272,11 +279,14 @@ export function founderManualPurchasePingEmail(params: FounderManualPurchasePing
   html: string;
 } {
   const { contactName, contactEmail, amountCents } = params;
-  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const headline =
+    amountCents > 0
+      ? `Manual purchased, $${formatAmount(amountCents)}.`
+      : "Manual unlocked on a full discount code, no revenue.";
   const html = `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:24px;font-family:Calibri,Arial,sans-serif;background-color:#ffffff;color:#000000;">
-  <p style="font-size:15px;">Manual purchased, $${amount}.</p>
+  <p style="font-size:15px;">${headline}</p>
   <table role="presentation" cellpadding="4" cellspacing="0" style="font-size:14px;">
     <tr><td><strong>Contact:</strong></td><td>${contactName} (${contactEmail})</td></tr>
   </table>
@@ -304,14 +314,13 @@ export function manualPrintOrderReceiptEmail(params: ManualPrintOrderReceiptPara
   html: string;
 } {
   const { contactName, amountCents, shippingName, addressLine1, addressLine2, city, state, postalCode } = params;
-  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
   const body = `
     <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
-      Payment confirmed. Your printed copy of the Zytrion Enterprise in Motion Manual is being prepared for shipment.
+      ${amountCents > 0 ? "Payment confirmed." : "Your order is confirmed."} Your printed copy of the Zytrion Enterprise in Motion Manual is being prepared for shipment.
     </p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
-      Amount charged: $${amount}
+      ${chargeLine(amountCents, "Complimentary copy, no charge.")}
     </p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
       Shipping to:<br/>
@@ -358,11 +367,14 @@ export function founderManualPrintOrderPingEmail(params: FounderManualPrintOrder
     country,
     phone,
   } = params;
-  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const headline =
+    amountCents > 0
+      ? `Printed Manual order, $${formatAmount(amountCents)}. Ship this one out.`
+      : "Printed Manual order on a full discount code, no revenue. Ship this one out.";
   const html = `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:24px;font-family:Calibri,Arial,sans-serif;background-color:#ffffff;color:#000000;">
-  <p style="font-size:15px;"><strong>Printed Manual order, $${amount}. Ship this one out.</strong></p>
+  <p style="font-size:15px;"><strong>${headline}</strong></p>
   <table role="presentation" cellpadding="4" cellspacing="0" style="font-size:14px;">
     <tr><td><strong>Contact:</strong></td><td>${contactName} (${contactEmail})</td></tr>
     <tr><td><strong>Ship to:</strong></td><td>${shippingName}</td></tr>
