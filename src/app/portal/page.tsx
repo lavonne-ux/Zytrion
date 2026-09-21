@@ -2,6 +2,7 @@
 import { getAdminStatus } from "@/lib/auth/admin";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import SignOutButton from "@/components/SignOutButton";
 import PhaseProgressButton from "@/components/PhaseProgressButton";
 import BookingWidget from "@/components/BookingWidget";
@@ -44,6 +45,29 @@ export default async function PortalPage() {
 
   if (!user) {
     redirect("/login");
+  }
+
+  // The free diagnostic is taken anonymously, before any account exists,
+  // so contact_email is the only thread connecting someone's assessment
+  // to the account they create afterward. Every portal visit claims any
+  // of this account's still-unlinked assessments, matched on the
+  // verified login email, case-insensitively, since the email typed
+  // into the assessment form and the one used to sign up don't always
+  // match in case. There is no update policy on assessments for a
+  // regular client (by design, so client_id can never be self-assigned
+  // through the normal RLS-bound client), so this runs through the
+  // admin client, the same pattern already used for the Stripe webhook
+  // and the Manual download route. Matching only on the account's own
+  // authenticated email keeps this from ever attaching someone else's
+  // assessment.
+  if (user.email) {
+    const admin = createAdminClient();
+    const escapedEmail = user.email.replace(/[%_]/g, (c) => `\\${c}`);
+    await admin
+      .from("assessments")
+      .update({ client_id: user.id })
+      .ilike("contact_email", escapedEmail)
+      .is("client_id", null);
   }
 
   const { isAdmin } = await getAdminStatus();
