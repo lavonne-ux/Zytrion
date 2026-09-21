@@ -486,12 +486,26 @@ export default async function PortalPage() {
                               toolName={phase.tools.tool_name}
                               fieldSchema={phase.tools.field_schema}
                             />
-                          ) : phase.status !== "complete" && phase.tools?.tool_name === "Financial Traceability Worksheet" ? (
-                            <FinancialTraceabilityWorksheet
-                              toolId={phase.tools.id}
-                              kitPhaseId={phase.id}
-                              toolName={phase.tools.tool_name}
-                            />
+                          ) : phase.tools?.tool_name === "Financial Traceability Worksheet" ? (
+                            // Ongoing tool, so it stays on screen in every
+                            // state rather than disappearing once the phase
+                            // is submitted. The progress button beside it is
+                            // the completion control, without it this phase
+                            // had no way to be finished at all and a Tier 2
+                            // client stopped here permanently.
+                            <div className="space-y-4">
+                              <FinancialTraceabilityWorksheet
+                                toolId={phase.tools.id}
+                                kitPhaseId={phase.id}
+                                toolName={phase.tools.tool_name}
+                              />
+                              <PhaseProgressButton
+                                kitPhaseId={phase.id}
+                                status={phase.status}
+                                reviewStatus={phase.reviewStatus}
+                                reviewerNotes={phase.reviewerNotes}
+                              />
+                            </div>
                           ) : phase.status !== "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "worksheet" ? (
                             <ToolWorksheet
                               toolId={phase.tools.id}
@@ -514,11 +528,26 @@ export default async function PortalPage() {
                               fieldSchema={phase.tools.field_schema}
                             />
                           ) : phase.tools?.portal_render_type === "log" ? (
-                            <ToolLog
-                              toolId={phase.tools.id}
-                              kitPhaseId={phase.id}
-                              toolName={phase.tools.tool_name}
-                            />
+                            // A log is a practice, not a one-off submission,
+                            // so it stays on screen in every state and the
+                            // client keeps adding entries after the phase is
+                            // approved. The progress button beside it is the
+                            // completion control, without it a Decision Log
+                            // phase could never be finished and both Tier 2
+                            // and Tier 3 clients stopped there permanently.
+                            <div className="space-y-4">
+                              <ToolLog
+                                toolId={phase.tools.id}
+                                kitPhaseId={phase.id}
+                                toolName={phase.tools.tool_name}
+                              />
+                              <PhaseProgressButton
+                                kitPhaseId={phase.id}
+                                status={phase.status}
+                                reviewStatus={phase.reviewStatus}
+                                reviewerNotes={phase.reviewerNotes}
+                              />
+                            </div>
                           ) : phase.status === "complete" && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
                             <a href={`/api/tools/generate-pdf?kitPhaseId=${phase.id}`}
                               className="inline-block border border-zy-electric/40 text-zy-electric px-4 py-2 rounded-md text-sm hover:bg-zy-electric/10 transition-colors"
