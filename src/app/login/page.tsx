@@ -27,6 +27,14 @@ function LoginForm() {
       : searchParams.get("enrolled") === "1"
       ? BANNERS.enrolled_login
       : null;
+
+  // Where to return after signing in. Only ever a path on this site: a
+  // value starting with "//" or carrying a scheme would let someone craft
+  // a login link that bounces the person to another domain afterwards,
+  // which is how open redirects get used for phishing.
+  const rawNext = searchParams.get("next");
+  const nextPath =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/portal";
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +58,7 @@ function LoginForm() {
       setSubmitting(false);
       return;
     }
-    router.push("/portal");
+    router.push(nextPath);
     router.refresh();
   }
   return (

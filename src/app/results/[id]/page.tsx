@@ -1,6 +1,7 @@
 // src/app/results/[id]/page.tsx
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { notFound, redirect } from "next/navigation";
 import PrintButton from "./PrintButton";
 import FullReportButton from "./FullReportButton";
 import StatusBanner, { BANNERS } from "@/components/StatusBanner";
@@ -10,6 +11,19 @@ import Stripe from "stripe";
 
 
 export const dynamic = "force-dynamic";
+
+// A results page carries a named business, its governance score, and once
+// paid, the Full Report. None of that should ever appear in a search index,
+// and the id in the URL should not travel to third party sites in a
+// referrer header when someone follows a link away from the page.
+//
+// This matters more than it looks. robots.txt allowed everything except
+// the login and signup pages, so a single results URL appearing anywhere
+// public was enough for a client's score to become searchable.
+export const metadata = {
+  robots: { index: false, follow: false, nocache: true },
+  referrer: "no-referrer" as const,
+};
 
 interface PillarScoreRow {
   section_total: number;
@@ -21,7 +35,7 @@ async function getAssessment(id: string) {
 
   const { data: assessment } = await supabase
     .from("assessments")
-    .select("id, total_score, contact_name, contact_business, taken_at, full_report_paid_at, tiers ( name, tier_number, one_line_summary )")
+    .select("id, client_id, total_score, contact_name, contact_business, taken_at, full_report_paid_at, tiers ( name, tier_number, one_line_summary )")
     .eq("id", id)
     .single();
 
@@ -76,6 +90,47 @@ export default async function ResultsPage(
   if (!data || !data.assessment) return notFound();
 
   const { assessment, pillarScores } = data;
+
+  // Access control, sized to how this page is actually used.
+  //
+  // The diagnostic is taken without an account, and the results link is
+  // emailed to someone who may never create one. For those people the URL
+  // itself is the credential, which is a deliberate design and the only
+  // way the flow can work. So an unclaimed assessment stays open to anyone
+  // holding its link.
+  //
+  // Once an assessment belongs to an account, the account becomes the
+  // access control and the link stops being enough. That closes the case
+  // where an old URL keeps working for whoever it was forwarded to long
+  // after the client claimed their results.
+  //
+  // Two deliberate exceptions, both of which would otherwise strand a real
+  // person: an admin may open any result, and anyone arriving back from
+  // Stripe with a checkout session id is let through, because that id is
+  // itself proof and a paying customer must never be bounced to a login
+  // screen the moment their payment succeeds.
+  if (assessment.client_id && !searchParams.session_id) {
+    const rlsClient = await createClient();
+    const {
+      data: { user: viewer },
+    } = await rlsClient.auth.getUser();
+
+    let allowed = viewer?.id === assessment.client_id;
+
+    if (!allowed && viewer) {
+      const { data: viewerProfile } = await rlsClient
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", viewer.id)
+        .single();
+      allowed = viewerProfile?.is_admin === true;
+    }
+
+    if (!allowed) {
+      redirect(`/login?next=/results/${params.id}`);
+    }
+  }
+
   const tier = (assessment as any).tiers;
   const lowest = pillarScores.reduce(
     (min, p) => (p.section_total < min.section_total ? p : min),
