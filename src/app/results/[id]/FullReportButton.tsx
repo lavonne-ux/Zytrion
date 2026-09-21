@@ -55,7 +55,7 @@ export default function FullReportButton({
       disabled={loading}
       className="inline-flex items-center justify-center rounded-lg border border-zy-electric px-5 py-3 text-sm font-medium text-white hover:bg-zy-electric/10 transition disabled:opacity-60"
     >
-      {loading ? "Redirecting to checkout..." : error ? "Try again" : "Get Your Full Report — $497"}
+      {loading ? "Redirecting to checkout..." : error ? "Try again" : "Get Your Full Report, $497"}
     </button>
   );
 }

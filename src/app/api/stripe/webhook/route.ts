@@ -391,6 +391,8 @@ export async function POST(req: Request) {
     // rather than an authenticated client.
     if (assessmentId) {
       const supabase = createAdminClient();
+      const amountCents = session.amount_total ?? 0;
+
       const { data: assessment } = await supabase
         .from("assessments")
         .update({
@@ -398,8 +400,30 @@ export async function POST(req: Request) {
           stripe_checkout_session_id: session.id,
         })
         .eq("id", assessmentId)
-        .select("id, contact_name, contact_business, contact_email, total_score, tiers ( name )")
+        .select("id, client_id, contact_name, contact_business, contact_email, total_score, tiers ( name )")
         .single();
+
+      // The Full Report was the one product that never wrote a payments
+      // row. Every other purchase did, so the most expensive thing on the
+      // price list was the one missing from the payment records entirely.
+      //
+      // client_id may be null here, because the Full Report is bought
+      // against an assessment rather than an account and the buyer does not
+      // have to be signed in. The row is still worth writing: it carries
+      // the amount, the Stripe reference and the time, which is what a
+      // revenue record needs.
+      if (assessment) {
+        const { error: paymentError } = await supabase.from("payments").insert({
+          client_id: assessment.client_id ?? null,
+          product: "Zytrion GRID Full Report",
+          amount_cents: amountCents,
+          status: "succeeded",
+          stripe_reference: session.id,
+        });
+        if (paymentError) {
+          console.error("Full Report payment record failed to save:", paymentError.message);
+        }
+      }
 
       if (assessment) {
         try {
@@ -413,6 +437,7 @@ export async function POST(req: Request) {
               contactName: assessment.contact_name,
               businessName,
               resultsUrl,
+              amountCents,
             });
             await resend.emails.send({
               from: EMAIL_FROM,
@@ -428,6 +453,7 @@ export async function POST(req: Request) {
               totalScore: assessment.total_score,
               tierName,
               resultsUrl,
+              amountCents,
             });
             await resend.emails.send({
               from: EMAIL_FROM,

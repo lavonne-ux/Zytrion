@@ -96,20 +96,31 @@ export interface PaymentReceiptParams {
   contactName: string;
   businessName: string;
   resultsUrl: string;
+  // The real figure Stripe settled, in cents. This used to be hardcoded at
+  // $497.00, which made every receipt wrong the moment a promotion code was
+  // applied, and a comped customer received a receipt stating they had been
+  // charged the full price. A receipt that misstates the amount is not a
+  // small thing for a company selling governance.
+  amountCents: number;
 }
 
 export function paymentReceiptEmail(params: PaymentReceiptParams): {
   subject: string;
   html: string;
 } {
-  const { contactName, businessName, resultsUrl } = params;
+  const { contactName, businessName, resultsUrl, amountCents } = params;
+  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  // A zero total is a comp, not a charge, so it says so rather than
+  // reporting "Amount charged: $0.00".
+  const amountLine =
+    amountCents > 0 ? `Amount charged: $${amount}` : "Complimentary access, no charge.";
   const body = `
     <p style="font-size:15px;color:#ffffff;line-height:1.6;">Hi ${contactName},</p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
       Payment confirmed. Your Full Report for ${businessName} is unlocked and ready inside the Zytrion platform, pillar by pillar detail, the root cause behind your weakest pillar, and your recommended next step.
     </p>
     <p style="font-size:15px;color:${BRAND.chrome};line-height:1.6;">
-      Amount charged: $497.00
+      ${amountLine}
     </p>
     ${button("View Your Full Report", resultsUrl)}
     <p style="font-size:13px;color:${BRAND.chrome};line-height:1.6;margin-top:24px;">
@@ -129,17 +140,25 @@ export interface FounderPurchasePingParams {
   totalScore: number;
   tierName: string;
   resultsUrl: string;
+  amountCents: number;
 }
 
 export function founderPurchasePingEmail(params: FounderPurchasePingParams): {
   subject: string;
   html: string;
 } {
-  const { businessName, contactName, contactEmail, totalScore, tierName, resultsUrl } = params;
+  const { businessName, contactName, contactEmail, totalScore, tierName, resultsUrl, amountCents } = params;
+  const amount = (amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  // Says plainly when a purchase was comped, so the founder notification
+  // is never mistaken for revenue that did not arrive.
+  const headline =
+    amountCents > 0
+      ? `Full Report purchased, $${amount}.`
+      : "Full Report unlocked on a full discount code, no revenue.";
   const html = `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:24px;font-family:Calibri,Arial,sans-serif;background-color:#ffffff;color:#000000;">
-  <p style="font-size:15px;">Full Report purchased, $497.</p>
+  <p style="font-size:15px;">${headline}</p>
   <table role="presentation" cellpadding="4" cellspacing="0" style="font-size:14px;">
     <tr><td><strong>Business:</strong></td><td>${businessName}</td></tr>
     <tr><td><strong>Contact:</strong></td><td>${contactName} (${contactEmail})</td></tr>
