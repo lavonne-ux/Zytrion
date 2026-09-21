@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { completePhase } from "@/lib/portal/completePhase";
+import { checkPhaseAccess } from "@/lib/portal/phaseAccess";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -15,6 +16,14 @@ export async function POST(req: NextRequest) {
   const { kitPhaseId, status, evidenceNote } = await req.json();
   if (!kitPhaseId || !["not_started", "in_progress", "complete"].includes(status)) {
     return NextResponse.json({ error: "Missing or invalid kitPhaseId/status." }, { status: 400 });
+  }
+
+  // Same gate as the tool submission route, applied to every status this
+  // route can set. Marking a locked phase "in progress" is the same skip as
+  // completing it, one step earlier.
+  const access = await checkPhaseAccess(user.id, kitPhaseId);
+  if (!access.allowed) {
+    return NextResponse.json({ error: access.error }, { status: access.status });
   }
 
   if (status === "complete" && (!evidenceNote || !evidenceNote.trim())) {

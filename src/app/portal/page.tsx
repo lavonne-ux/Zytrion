@@ -34,6 +34,11 @@ type PhaseWithProgress = {
   status: PhaseStatus;
   reviewStatus: ReviewStatus;
   reviewerNotes: string | null;
+  // Set when an earlier phase in the same kit is still outstanding. The
+  // server refuses these submissions either way, so this exists to stop a
+  // client filling in a long worksheet before finding that out.
+  locked: boolean;
+  lockedBy: { phase_number: number; title: string } | null;
 };
 
 const BOOKABLE_KIT_TYPES = ["sprint", "consultation"];
@@ -216,7 +221,34 @@ export default async function PortalPage(props: {
       status: progressMap[p.id]?.status ?? "not_started",
       reviewStatus: progressMap[p.id]?.review_status ?? "pending",
       reviewerNotes: progressMap[p.id]?.reviewer_notes ?? null,
+      locked: false,
+      lockedBy: null,
     }));
+
+    // The kit runs in order. Everything past the first outstanding phase is
+    // shown but not workable, so the roadmap stays visible while the work
+    // stays sequential. Mirrors checkPhaseAccess on the server, which is
+    // what actually enforces it; this is the courtesy version so nobody
+    // fills in a nine field worksheet and then gets refused.
+    //
+    // A phase awaiting review does not lock what follows it, for the same
+    // reason it does not on the server: review speed is not the client's
+    // problem. A phase sent back for revision does.
+    if (!isAdminPreview) {
+      const blocker = phasesWithProgress.find(
+        (p) => p.status !== "complete" || p.reviewStatus === "needs_revision"
+      );
+      if (blocker) {
+        for (const p of phasesWithProgress) {
+          // Mirrors the server: a phase already completed is never locked,
+          // whatever sits before it.
+          if (p.phase_number > blocker.phase_number && p.status !== "complete") {
+            p.locked = true;
+            p.lockedBy = { phase_number: blocker.phase_number, title: blocker.title };
+          }
+        }
+      }
+    }
 
     enrollmentsWithPhases.push({ enrollment, isBookable: false, kitType, phases: phasesWithProgress, isAdminPreview });
   }
@@ -503,7 +535,20 @@ export default async function PortalPage(props: {
                               )}
                             </div>
                           )}
-                          {isAdminPreview && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
+                          {phase.locked ? (
+                            <div className="border border-white/10 bg-white/[0.02] rounded-md p-4">
+                              <p className="text-xs text-zy-chrome/70 uppercase tracking-wide mb-1">
+                                Opens next
+                              </p>
+                              <p className="text-sm text-zy-chrome leading-relaxed">
+                                {phase.lockedBy
+                                  ? `Finish phase ${phase.lockedBy.phase_number}, ${phase.lockedBy.title}, and this phase opens. `
+                                  : "An earlier phase is still open. "}
+                                Each phase produces the evidence the next one is
+                                built on, so the kit runs in order.
+                              </p>
+                            </div>
+                          ) : isAdminPreview && phase.tools?.field_schema && phase.tools?.portal_render_type === "form" ? (
                             <ToolForm
                               toolId={phase.tools.id}
                               kitPhaseId={phase.id}

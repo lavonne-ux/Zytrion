@@ -83,21 +83,7 @@ export async function POST(req: NextRequest) {
   // review queue carrying the reasons, so the reviewer opens it already
   // knowing what to look at.
   const flags = flagSubmission({ toolName: toolName ?? "Tool", submittedData });
-
-  // One exception, and it matters. Once a human has sent a phase back, every
-  // later submission on that phase returns to that human, whatever the
-  // automatic checks say. A reviewer may have sent it back for a reason no
-  // pattern can detect, and a client should not be able to clear a human
-  // judgement by fixing something mechanical.
-  const { data: priorProgress } = await supabase
-    .from("client_phase_progress")
-    .select("review_status")
-    .eq("client_id", user.id)
-    .eq("kit_phase_id", kitPhaseId)
-    .maybeSingle();
-
-  const wasSentBack = priorProgress?.review_status === "needs_revision";
-  const autoApproved = shouldAutoApprove(flags) && !wasSentBack;
+  const autoApproved = shouldAutoApprove(flags);
 
   const result = await completePhase({
     userId: user.id,

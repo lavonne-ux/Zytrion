@@ -32,10 +32,6 @@ export async function completePhase(params: {
         flags: reviewFlags ?? [],
       },
       review_status: reviewStatus,
-      // Cleared on every resubmission. The previous reviewer's note applied
-      // to the previous submission, and leaving it attached would show a
-      // client feedback about work they have already replaced.
-      reviewer_notes: null,
     },
     { onConflict: "client_id,kit_phase_id" }
   );
